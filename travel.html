@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出行计划 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-plane"></i> 出行计划</h1>
+            <p>管理你的旅游出行清单</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="exercise.html"><i class="fas fa-running"></i> 运动</a></li>
+                <li><a href="reading.html"><i class="fas fa-book"></i> 读书</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理</a></li>
+                <li><a href="travel.html" class="active"><i class="fas fa-plane"></i> 出行</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-plus-circle"></i> 添加出行计划</h2>
+                <form id="travelForm">
+                    <div class="form-group">
+                        <label>行程名称</label>
+                        <input type="text" class="form-control" id="travelTitle" placeholder="例如：云南之旅..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>目的地</label>
+                        <input type="text" class="form-control" id="travelDestination" placeholder="输入目的地...">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>开始日期</label>
+                            <input type="date" class="form-control" id="travelStart" required>
+                        </div>
+                        <div class="form-group">
+                            <label>结束日期</label>
+                            <input type="date" class="form-control" id="travelEnd">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>备注（可选）</label>
+                        <textarea class="form-control" id="travelNotes" rows="2" placeholder="写下计划详情、注意事项..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存计划
+                    </button>
+                </form>
+            </section>
+
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-suitcase-rolling"></i> 即将到来的行程</h2>
+                </div>
+                <div id="upcomingTravels">
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-archive"></i> 历史行程</h2>
+                </div>
+                <div id="pastTravels">
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTravels();
+        });
+
+        function loadTravels() {
+            const travels = getTravels();
+            const today = getToday();
+            
+            const upcoming = travels.filter(t => t.startDate >= today && !t.completed);
+            const past = travels.filter(t => t.startDate < today || t.completed);
+
+            const upcomingContainer = document.getElementById('upcomingTravels');
+            const pastContainer = document.getElementById('pastTravels');
+
+            if (upcoming.length === 0) {
+                upcomingContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-plane-departure"></i>
+                        <h3>暂无出行计划</h3>
+                        <p>添加你的第一个出行计划吧！</p>
+                    </div>
+                `;
+            } else {
+                upcomingContainer.innerHTML = upcoming.map(travel => renderTravelCard(travel)).join('');
+            }
+
+            if (past.length === 0) {
+                pastContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-archive"></i>
+                        <h3>暂无历史行程</h3>
+                    </div>
+                `;
+            } else {
+                pastContainer.innerHTML = past.map(travel => renderTravelCard(travel, true)).join('');
+            }
+        }
+
+        function renderTravelCard(travel, isPast = false) {
+            return `
+                <div class="travel-card ${isPast ? 'completed' : 'upcoming'}">
+                    <div class="travel-header">
+                        <div class="travel-title">${escapeHtml(travel.title)}</div>
+                    </div>
+                    ${travel.destination ? `<div class="travel-destination"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(travel.destination)}</div>` : ''}
+                    <div class="travel-dates">
+                        <i class="fas fa-calendar"></i>
+                        ${formatDate(travel.startDate)} ${travel.endDate ? ' ~ ' + formatDate(travel.endDate) : ''}
+                    </div>
+                    ${travel.notes ? `<div class="travel-notes">${escapeHtml(travel.notes)}</div>` : ''}
+                    <div class="travel-actions">
+                        ${!isPast ? `
+                            <button class="btn btn-sm btn-success" onclick="markTravelCompleted('${travel.id}')">
+                                <i class="fas fa-check"></i> 标记完成
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-danger" onclick="deleteTravelRecord('${travel.id}')">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('travelForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('travelTitle').value.trim();
+            const destination = document.getElementById('travelDestination').value.trim();
+            const startDate = document.getElementById('travelStart').value;
+            const endDate = document.getElementById('travelEnd').value;
+            const notes = document.getElementById('travelNotes').value.trim();
+
+            if (title && startDate) {
+                addTravel(title, destination, startDate, endDate, notes);
+                document.getElementById('travelForm').reset();
+                loadTravels();
+                showNotification('出行计划保存成功！');
+            }
+        });
+
+        function markTravelCompleted(id) {
+            confirmDialog('确定要标记这个行程为已完成吗？', () => {
+                updateTravel(id, { completed: true });
+                loadTravels();
+                showNotification('行程已标记完成！');
+            });
+        }
+
+        function deleteTravelRecord(id) {
+            confirmDialog('确定要删除这个出行计划吗？', () => {
+                deleteTravel(id);
+                loadTravels();
+                showNotification('出行计划已删除');
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

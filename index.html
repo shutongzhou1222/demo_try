@@ -17,32 +17,45 @@
         <nav>
             <ul>
                 <li><a href="index.html" class="active"><i class="fas fa-home"></i> 首页</a></li>
-                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办事项</a></li>
-                <li><a href="goal.html"><i class="fas fa-bullseye"></i> 小目标</a></li>
-                <li><a href="diary.html"><i class="fas fa-book"></i> 心情日记</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="exercise.html"><i class="fas fa-running"></i> 运动</a></li>
+                <li><a href="reading.html"><i class="fas fa-book"></i> 读书</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理</a></li>
+                <li><a href="travel.html"><i class="fas fa-plane"></i> 出行</a></li>
             </ul>
         </nav>
 
         <main>
-            <!-- Statistics Section -->
+            <!-- Greeting Section -->
+            <section class="greeting-section fade-in">
+                <div class="greeting-message" id="greetingMessage">今天是幸福的一天！</div>
+                <div class="current-date" id="currentDate"></div>
+            </section>
+
+            <!-- Timeline Section (Apple Style) -->
             <section class="card fade-in">
-                <h2 class="card-title"><i class="fas fa-chart-line"></i> 数据概览</h2>
-                <div class="stats-container">
-                    <div class="stat-card">
-                        <div class="stat-number" id="todoTotal">0</div>
-                        <div class="stat-label">待办事项</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="todoCompleted">0</div>
-                        <div class="stat-label">已完成</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="goalTotal">0</div>
-                        <div class="stat-label">小目标</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="diaryTotal">0</div>
-                        <div class="stat-label">日记篇数</div>
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-day"></i> 今日日程</h2>
+                    <button class="btn btn-primary btn-sm" onclick="openScheduleModal()">
+                        <i class="fas fa-plus"></i> 添加
+                    </button>
+                </div>
+                
+                <div class="timeline-date-nav">
+                    <button class="btn btn-secondary" onclick="changeTimelineDate(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="timeline-current-date" id="timelineCurrentDate"></span>
+                    <button class="btn btn-secondary" onclick="changeTimelineDate(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="goToToday()">今天</button>
+                </div>
+
+                <div class="timeline-container">
+                    <div class="timeline" id="timelineList">
+                        <!-- Timeline items will be rendered here -->
                     </div>
                 </div>
             </section>
@@ -58,140 +71,230 @@
                         <h3>每日待办</h3>
                         <p>管理日常任务，提高工作效率</p>
                     </a>
-                    <a href="goal.html" class="feature-card goal">
-                        <div class="feature-icon">
-                            <i class="fas fa-bullseye"></i>
+                    <a href="schedule.html" class="feature-card">
+                        <div class="feature-icon" style="background: var(--secondary-color);">
+                            <i class="fas fa-clock"></i>
                         </div>
-                        <h3>小目标</h3>
-                        <p>设定目标，追踪进度，实现梦想</p>
+                        <h3>日程安排</h3>
+                        <p>苹果风格时间轴日程管理</p>
                     </a>
-                    <a href="diary.html" class="feature-card diary">
-                        <div class="feature-icon">
-                            <i class="fas fa-book"></i>
+                    <a href="exercise.html" class="feature-card">
+                        <div class="feature-icon" style="background: var(--success-color);">
+                            <i class="fas fa-running"></i>
                         </div>
-                        <h3>心情日记</h3>
-                        <p>记录心情，留下美好回忆</p>
+                        <h3>运动记录</h3>
+                        <p>追踪跑步、瑜伽等运动</p>
+                    </a>
+                    <a href="reading.html" class="feature-card">
+                        <div class="feature-icon" style="background: var(--warning-color);">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <h3>读书打卡</h3>
+                        <p>记录阅读书名和时间</p>
+                    </a>
+                    <a href="period.html" class="feature-card">
+                        <div class="feature-icon" style="background: var(--danger-color);">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <h3>生理期</h3>
+                        <p>周期记录与预测</p>
+                    </a>
+                    <a href="travel.html" class="feature-card">
+                        <div class="feature-icon" style="background: var(--accent-color);">
+                            <i class="fas fa-plane"></i>
+                        </div>
+                        <h3>出行计划</h3>
+                        <p>旅游出行清单管理</p>
                     </a>
                 </div>
             </section>
 
-            <!-- Recent Activity -->
+            <!-- Statistics Overview -->
             <section class="card fade-in">
-                <h2 class="card-title"><i class="fas fa-clock"></i> 最近动态</h2>
-                <div id="recentActivity">
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <h3>暂无动态</h3>
-                        <p>开始记录你的生活吧！</p>
+                <h2 class="card-title"><i class="fas fa-chart-line"></i> 数据概览</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="todoTotal">0</div>
+                        <div class="stat-label">待办事项</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todoCompleted">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="exerciseCount">0</div>
+                        <div class="stat-label">运动次数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="readingCount">0</div>
+                        <div class="stat-label">读书记录</div>
                     </div>
                 </div>
             </section>
         </main>
 
         <footer>
-            <p>Made with <i class="fas fa-heart" style="color: #f56565;"></i> by Life Tracker</p>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
         </footer>
+    </div>
+
+    <!-- Add Schedule Modal -->
+    <div class="modal" id="scheduleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-plus-circle"></i> 添加日程</h3>
+                <button class="modal-close" onclick="closeScheduleModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="scheduleForm">
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" class="form-control" id="scheduleDate" required>
+                </div>
+                <div class="form-group">
+                    <label>时间</label>
+                    <input type="time" class="form-control" id="scheduleTime" required>
+                </div>
+                <div class="form-group">
+                    <label>日程名称</label>
+                    <input type="text" class="form-control" id="scheduleTitle" placeholder="输入日程名称..." required>
+                </div>
+                <div class="form-group">
+                    <label>地点（可选）</label>
+                    <input type="text" class="form-control" id="scheduleLocation" placeholder="输入地点...">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="app.js"></script>
     <script>
+        let currentTimelineDate = getToday();
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Load statistics
+            loadGreeting();
+            loadCurrentDate();
+            loadTimeline();
             loadStats();
-            
-            // Load recent activity
-            loadRecentActivity();
         });
 
-        function loadStats() {
-            const todoStats = getTodoStats();
-            const goalStats = getGoalStats();
-            const diaryStats = getDiaryStats();
-
-            document.getElementById('todoTotal').textContent = todoStats.total;
-            document.getElementById('todoCompleted').textContent = todoStats.completed;
-            document.getElementById('goalTotal').textContent = goalStats.total;
-            document.getElementById('diaryTotal').textContent = diaryStats.total;
+        function loadGreeting() {
+            const greeting = getGreeting();
+            document.getElementById('greetingMessage').textContent = greeting;
         }
 
-        function loadRecentActivity() {
-            const container = document.getElementById('recentActivity');
+        function loadCurrentDate() {
+            const date = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('currentDate').textContent = date.toLocaleDateString('zh-CN', options);
+        }
+
+        function loadTimeline() {
+            const schedules = getSchedulesByDate(currentTimelineDate);
+            const container = document.getElementById('timelineList');
+            const dateDisplay = document.getElementById('timelineCurrentDate');
             
-            // Get recent items from all categories
-            const todos = getTodos().slice(-3).reverse();
-            const goals = getGoals().slice(-2).reverse();
-            const diaries = getDiaries().slice(-3).reverse();
-            
-            const activities = [];
-            
-            todos.forEach(todo => {
-                activities.push({
-                    type: 'todo',
-                    text: todo.text,
-                    time: todo.createdAt,
-                    status: todo.completed ? '已完成' : '待完成',
-                    icon: 'fa-check-circle',
-                    color: todo.completed ? '#48bb78' : '#667eea'
-                });
-            });
-            
-            goals.forEach(goal => {
-                activities.push({
-                    type: 'goal',
-                    text: goal.title,
-                    time: goal.createdAt,
-                    status: `进度 ${goal.progress}%`,
-                    icon: 'fa-bullseye',
-                    color: '#f5576c'
-                });
-            });
-            
-            diaries.forEach(diary => {
-                activities.push({
-                    type: 'diary',
-                    text: diary.content.substring(0, 50) + (diary.content.length > 50 ? '...' : ''),
-                    time: diary.createdAt,
-                    status: MOODS[diary.mood]?.label || '记录心情',
-                    icon: 'fa-book',
-                    color: '#4facfe'
-                });
-            });
-            
-            // Sort by time
-            activities.sort((a, b) => new Date(b.time) - new Date(a.time));
-            
-            // Take top 5
-            const recentActivities = activities.slice(0, 5);
-            
-            if (recentActivities.length === 0) {
+            const date = new Date(currentTimelineDate);
+            dateDisplay.textContent = date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+
+            if (schedules.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <h3>暂无动态</h3>
-                        <p>开始记录你的生活吧！</p>
+                    <div class="timeline-empty">
+                        <i class="fas fa-calendar-times" style="font-size: 3rem; opacity: 0.3; margin-bottom: 15px;"></i>
+                        <p>今日暂无日程安排</p>
                     </div>
                 `;
                 return;
             }
-            
-            container.innerHTML = `
-                <div class="todo-list">
-                    ${recentActivities.map(activity => `
-                        <div class="todo-item" style="background: white; border-left: 4px solid ${activity.color};">
-                            <div class="todo-checkbox" style="border-color: ${activity.color}; color: ${activity.color};">
-                                <i class="fas ${activity.icon}"></i>
-                            </div>
-                            <div class="todo-text">
-                                <div style="font-weight: 500;">${activity.text}</div>
-                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
-                                    ${formatDateTime(activity.time)} · ${activity.status}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
+
+            container.innerHTML = schedules.map(schedule => `
+                <div class="timeline-item" data-id="${schedule.id}">
+                    <div class="timeline-time">${schedule.time}</div>
+                    <div class="timeline-title">${escapeHtml(schedule.title)}</div>
+                    ${schedule.location ? `<div class="timeline-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                    <div class="timeline-actions">
+                        <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-            `;
+            `).join('');
         }
+
+        function changeTimelineDate(delta) {
+            const date = new Date(currentTimelineDate);
+            date.setDate(date.getDate() + delta);
+            currentTimelineDate = date.toISOString().split('T')[0];
+            loadTimeline();
+        }
+
+        function goToToday() {
+            currentTimelineDate = getToday();
+            loadTimeline();
+        }
+
+        function openScheduleModal() {
+            document.getElementById('scheduleDate').value = currentTimelineDate;
+            document.getElementById('scheduleModal').classList.add('active');
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('scheduleModal').classList.remove('active');
+            document.getElementById('scheduleForm').reset();
+        }
+
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('scheduleDate').value;
+            const time = document.getElementById('scheduleTime').value;
+            const title = document.getElementById('scheduleTitle').value.trim();
+            const location = document.getElementById('scheduleLocation').value.trim();
+            
+            if (title && date && time) {
+                addSchedule(date, time, title, location);
+                closeScheduleModal();
+                loadTimeline();
+                loadStats();
+                showNotification('日程添加成功！');
+            }
+        });
+
+        function deleteScheduleItem(id) {
+            confirmDialog('确定要删除这个日程吗？', () => {
+                deleteSchedule(id);
+                loadTimeline();
+                showNotification('日程已删除');
+            });
+        }
+
+        function loadStats() {
+            const todoStats = getTodoStats();
+            const exerciseStats = getExerciseStats('week');
+            const readingStats = getReadingStats();
+
+            document.getElementById('todoTotal').textContent = todoStats.total;
+            document.getElementById('todoCompleted').textContent = todoStats.completed;
+            document.getElementById('exerciseCount').textContent = exerciseStats.count;
+            document.getElementById('readingCount').textContent = readingStats.total;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('scheduleModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeScheduleModal();
+            }
+        });
     </script>
 </body>
 </html>

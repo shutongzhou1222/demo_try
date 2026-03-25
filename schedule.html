@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日程安排 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-clock"></i> 日程安排</h1>
+            <p>苹果风格纵向时间轴日程管理</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html" class="active"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="exercise.html"><i class="fas fa-running"></i> 运动</a></li>
+                <li><a href="reading.html"><i class="fas fa-book"></i> 读书</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理</a></li>
+                <li><a href="travel.html"><i class="fas fa-plane"></i> 出行</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-day"></i> 日程时间轴</h2>
+                    <button class="btn btn-primary" onclick="openModal()">
+                        <i class="fas fa-plus"></i> 添加日程
+                    </button>
+                </div>
+
+                <div class="timeline-date-nav">
+                    <button class="btn btn-secondary" onclick="changeDate(-7)">
+                        <i class="fas fa-chevron-left"></i> 上周
+                    </button>
+                    <button class="btn btn-secondary" onclick="changeDate(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="timeline-current-date" id="currentDateDisplay"></span>
+                    <button class="btn btn-secondary" onclick="changeDate(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="btn btn-secondary" onclick="changeDate(7)">
+                        下周 <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="goToToday()">今天</button>
+                </div>
+
+                <div class="timeline" id="scheduleList">
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <div class="modal" id="scheduleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-plus-circle"></i> 添加日程</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="scheduleForm">
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" class="form-control" id="scheduleDate" required>
+                </div>
+                <div class="form-group">
+                    <label>时间</label>
+                    <input type="time" class="form-control" id="scheduleTime" required>
+                </div>
+                <div class="form-group">
+                    <label>日程名称</label>
+                    <input type="text" class="form-control" id="scheduleTitle" placeholder="输入日程名称..." required>
+                </div>
+                <div class="form-group">
+                    <label>地点（可选）</label>
+                    <input type="text" class="form-control" id="scheduleLocation" placeholder="输入地点...">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let currentDate = getToday();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchedule();
+        });
+
+        function loadSchedule() {
+            const schedules = getSchedulesByDate(currentDate);
+            const container = document.getElementById('scheduleList');
+            const dateDisplay = document.getElementById('currentDateDisplay');
+            
+            const date = new Date(currentDate);
+            dateDisplay.textContent = date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+
+            if (schedules.length === 0) {
+                container.innerHTML = `
+                    <div class="timeline-empty">
+                        <i class="fas fa-calendar-times" style="font-size: 3rem; opacity: 0.3; margin-bottom: 15px;"></i>
+                        <p>当日暂无日程安排</p>
+                        <button class="btn btn-primary" onclick="openModal()" style="margin-top: 15px;">
+                            <i class="fas fa-plus"></i> 添加第一个日程
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = schedules.map(schedule => `
+                <div class="timeline-item" data-id="${schedule.id}">
+                    <div class="timeline-time">${schedule.time}</div>
+                    <div class="timeline-title">${escapeHtml(schedule.title)}</div>
+                    ${schedule.location ? `<div class="timeline-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                    <div class="timeline-actions">
+                        <button class="todo-btn delete" onclick="deleteSchedule('${schedule.id}')" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function changeDate(delta) {
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() + delta);
+            currentDate = date.toISOString().split('T')[0];
+            loadSchedule();
+        }
+
+        function goToToday() {
+            currentDate = getToday();
+            loadSchedule();
+        }
+
+        function openModal() {
+            document.getElementById('scheduleDate').value = currentDate;
+            document.getElementById('scheduleModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('scheduleModal').classList.remove('active');
+            document.getElementById('scheduleForm').reset();
+        }
+
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('scheduleDate').value;
+            const time = document.getElementById('scheduleTime').value;
+            const title = document.getElementById('scheduleTitle').value.trim();
+            const location = document.getElementById('scheduleLocation').value.trim();
+            
+            if (title && date && time) {
+                addSchedule(date, time, title, location);
+                closeModal();
+                currentDate = date;
+                loadSchedule();
+                showNotification('日程添加成功！');
+            }
+        });
+
+        function deleteSchedule(id) {
+            confirmDialog('确定要删除这个日程吗？', () => {
+                deleteScheduleItem(id);
+                loadSchedule();
+                showNotification('日程已删除');
+            });
+        }
+
+        function deleteScheduleItem(id) {
+            deleteSchedule(id);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('scheduleModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

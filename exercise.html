@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运动记录 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-running"></i> 运动记录</h1>
+            <p>追踪你的每一次运动</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="exercise.html" class="active"><i class="fas fa-running"></i> 运动</a></li>
+                <li><a href="reading.html"><i class="fas fa-book"></i> 读书</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理</a></li>
+                <li><a href="travel.html"><i class="fas fa-plane"></i> 出行</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-chart-bar"></i> 运动统计</h2>
+                <div class="exercise-stats-grid">
+                    <div class="exercise-stat-card">
+                        <div class="exercise-stat-number" id="weekCount">0</div>
+                        <div class="exercise-stat-label">本周运动次数</div>
+                    </div>
+                    <div class="exercise-stat-card">
+                        <div class="exercise-stat-number" id="monthCount">0</div>
+                        <div class="exercise-stat-label">本月运动次数</div>
+                    </div>
+                    <div class="exercise-stat-card">
+                        <div class="exercise-stat-number" id="weekMinutes">0</div>
+                        <div class="exercise-stat-label">本周时长(分钟)</div>
+                    </div>
+                    <div class="exercise-stat-card">
+                        <div class="exercise-stat-number" id="monthMinutes">0</div>
+                        <div class="exercise-stat-label">本月时长(分钟)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-plus-circle"></i> 记录运动</h2>
+                <form id="exerciseForm">
+                    <div class="form-group">
+                        <label>运动类型</label>
+                        <div class="exercise-type-selector" id="exerciseTypeSelector">
+                        </div>
+                        <input type="hidden" id="selectedType" value="跑步">
+                    </div>
+                    <div class="form-group">
+                        <label>持续时间（分钟）</label>
+                        <input type="number" class="form-control" id="exerciseDuration" placeholder="输入运动时长..." min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input type="date" class="form-control" id="exerciseDate">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存记录
+                    </button>
+                </form>
+            </section>
+
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> 运动历史</h2>
+                </div>
+                <div id="exerciseHistory">
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let selectedType = '跑步';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initTypeSelector();
+            loadStats();
+            loadHistory();
+        });
+
+        function initTypeSelector() {
+            const container = document.getElementById('exerciseTypeSelector');
+            container.innerHTML = EXERCISE_TYPES.map(type => `
+                <button type="button" class="exercise-type-btn ${type === selectedType ? 'active' : ''}" data-type="${type}">
+                    ${type}
+                </button>
+            `).join('');
+
+            container.querySelectorAll('.exercise-type-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    container.querySelectorAll('.exercise-type-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedType = this.dataset.type;
+                    document.getElementById('selectedType').value = selectedType;
+                });
+            });
+
+            document.getElementById('exerciseDate').value = getToday();
+        }
+
+        function loadStats() {
+            const weekStats = getExerciseStats('week');
+            const monthStats = getExerciseStats('month');
+
+            document.getElementById('weekCount').textContent = weekStats.count;
+            document.getElementById('monthCount').textContent = monthStats.count;
+            document.getElementById('weekMinutes').textContent = weekStats.totalMinutes;
+            document.getElementById('monthMinutes').textContent = monthStats.totalMinutes;
+        }
+
+        function loadHistory() {
+            const exercises = getExercises().slice(0, 20);
+            const container = document.getElementById('exerciseHistory');
+
+            if (exercises.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-running"></i>
+                        <h3>暂无运动记录</h3>
+                        <p>开始记录你的运动吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = exercises.map(ex => `
+                <div class="exercise-history-item">
+                    <div class="exercise-history-info">
+                        <span class="exercise-history-type">${ex.type}</span>
+                        <span class="exercise-history-duration">${ex.duration} 分钟</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span class="exercise-history-date">${formatDate(ex.date)}</span>
+                        <button class="todo-btn delete" onclick="deleteExerciseRecord('${ex.id}')" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('exerciseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const type = selectedType;
+            const duration = document.getElementById('exerciseDuration').value;
+            const date = document.getElementById('exerciseDate').value;
+
+            if (type && duration && date) {
+                addExercise(type, duration, date);
+                document.getElementById('exerciseDuration').value = '';
+                loadStats();
+                loadHistory();
+                showNotification('运动记录保存成功！');
+            }
+        });
+
+        function deleteExerciseRecord(id) {
+            confirmDialog('确定要删除这条运动记录吗？', () => {
+                deleteExercise(id);
+                loadStats();
+                loadHistory();
+                showNotification('记录已删除');
+            });
+        }
+    </script>
+</body>
+</html>

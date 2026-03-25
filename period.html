@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生理期记录 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-heartbeat"></i> 生理期记录</h1>
+            <p>追踪生理周期，预测下次时间</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="exercise.html"><i class="fas fa-running"></i> 运动</a></li>
+                <li><a href="reading.html"><i class="fas fa-book"></i> 读书</a></li>
+                <li><a href="period.html" class="active"><i class="fas fa-heartbeat"></i> 生理</a></li>
+                <li><a href="travel.html"><i class="fas fa-plane"></i> 出行</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-calendar-plus"></i> 记录生理期</h2>
+                <form id="periodForm">
+                    <div class="form-group">
+                        <label>开始日期</label>
+                        <input type="date" class="form-control" id="periodStart" required>
+                    </div>
+                    <div class="form-group">
+                        <label>结束日期（可选）</label>
+                        <input type="date" class="form-control" id="periodEnd">
+                    </div>
+                    <div class="form-group">
+                        <label>备注（可选）</label>
+                        <textarea class="form-control" id="periodNotes" rows="2" placeholder="写下备注..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存记录
+                    </button>
+                </form>
+            </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-calculator"></i> 下次预测</h2>
+                <div class="period-estimate" id="periodEstimate">
+                    <div class="period-estimate-date">-</div>
+                    <div class="period-estimate-label">记录至少两次后自动预测</div>
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> 记录历史</h2>
+                </div>
+                <div id="periodHistory">
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEstimate();
+            loadHistory();
+        });
+
+        function loadEstimate() {
+            const estimate = getNextPeriodEstimate();
+            const container = document.getElementById('periodEstimate');
+
+            if (!estimate) {
+                container.innerHTML = `
+                    <div class="period-estimate-date">-</div>
+                    <div class="period-estimate-label">记录至少两次后自动预测</div>
+                `;
+                return;
+            }
+
+            const daysUntil = Math.ceil((new Date(estimate.nextDate) - new Date()) / (1000 * 60 * 60 * 24));
+            let message;
+            if (daysUntil < 0) {
+                message = '生理期已到';
+            } else if (daysUntil === 0) {
+                message = '今天可能是第一天';
+            } else if (daysUntil === 1) {
+                message = '预计明天到来';
+            } else {
+                message = `预计 ${daysUntil} 天后到来`;
+            }
+
+            container.innerHTML = `
+                <div class="period-estimate-date">${formatDate(estimate.nextDate)}</div>
+                <div class="period-estimate-label">平均周期 ${estimate.avgCycle} 天 · ${message}</div>
+            `;
+        }
+
+        function loadHistory() {
+            const periods = getPeriods();
+            const container = document.getElementById('periodHistory');
+
+            if (periods.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-heartbeat"></i>
+                        <h3>暂无记录</h3>
+                        <p>开始记录你的生理周期吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="period-history">
+                    ${periods.map(period => `
+                        <div class="period-history-item">
+                            <div>
+                                <div class="period-history-dates">
+                                    ${formatDate(period.startDate)} ${period.endDate ? ' ~ ' + formatDate(period.endDate) : '(进行中)'}
+                                </div>
+                                ${period.notes ? `<div class="period-history-notes">${escapeHtml(period.notes)}</div>` : ''}
+                            </div>
+                            <button class="todo-btn delete" onclick="deletePeriodRecord('${period.id}')" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        document.getElementById('periodForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const startDate = document.getElementById('periodStart').value;
+            const endDate = document.getElementById('periodEnd').value;
+            const notes = document.getElementById('periodNotes').value.trim();
+
+            if (startDate) {
+                addPeriod(startDate, endDate, notes);
+                document.getElementById('periodForm').reset();
+                loadEstimate();
+                loadHistory();
+                showNotification('记录保存成功！');
+            }
+        });
+
+        function deletePeriodRecord(id) {
+            confirmDialog('确定要删除这条记录吗？', () => {
+                deletePeriod(id);
+                loadEstimate();
+                loadHistory();
+                showNotification('记录已删除');
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>读书打卡 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-book-open"></i> 读书打卡</h1>
+            <p>记录阅读的美好时光</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="exercise.html"><i class="fas fa-running"></i> 运动</a></li>
+                <li><a href="reading.html" class="active"><i class="fas fa-book"></i> 读书</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理</a></li>
+                <li><a href="travel.html"><i class="fas fa-plane"></i> 出行</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-chart-pie"></i> 阅读统计</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalBooks">0</div>
+                        <div class="stat-label">阅读书籍总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalMinutes">0</div>
+                        <div class="stat-label">阅读总时长(分钟)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-pen"></i> 记录阅读</h2>
+                <form id="readingForm">
+                    <div class="form-group">
+                        <label>书名</label>
+                        <input type="text" class="form-control" id="bookName" placeholder="输入书名..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>阅读时长（分钟）</label>
+                        <input type="number" class="form-control" id="readingDuration" placeholder="输入阅读时长..." min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input type="date" class="form-control" id="readingDate">
+                    </div>
+                    <div class="form-group">
+                        <label>阅读感受（可选）</label>
+                        <textarea class="form-control" id="readingThoughts" rows="3" placeholder="写下你的阅读感受..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存记录
+                    </button>
+                </form>
+            </section>
+
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> 阅读历史</h2>
+                </div>
+                <div id="readingHistory">
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadHistory();
+            document.getElementById('readingDate').value = getToday();
+        });
+
+        function loadStats() {
+            const stats = getReadingStats();
+            document.getElementById('totalBooks').textContent = stats.total;
+            document.getElementById('totalMinutes').textContent = stats.totalMinutes;
+        }
+
+        function loadHistory() {
+            const readings = getReadings();
+            const container = document.getElementById('readingHistory');
+
+            if (readings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <h3>暂无阅读记录</h3>
+                        <p>开始记录你的阅读时光吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = readings.map(reading => `
+                <div class="reading-card">
+                    <div class="reading-book-name">${escapeHtml(reading.bookName)}</div>
+                    <div class="reading-info">
+                        <span><i class="fas fa-clock"></i> ${reading.duration} 分钟</span>
+                        <span><i class="fas fa-calendar"></i> ${formatDate(reading.date)}</span>
+                    </div>
+                    ${reading.thoughts ? `<div class="reading-thoughts">${escapeHtml(reading.thoughts)}</div>` : ''}
+                    <div style="margin-top: 15px; display: flex; justify-content: flex-end;">
+                        <button class="btn btn-sm btn-danger" onclick="deleteReadingRecord('${reading.id}')">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('readingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const bookName = document.getElementById('bookName').value.trim();
+            const duration = document.getElementById('readingDuration').value;
+            const date = document.getElementById('readingDate').value;
+            const thoughts = document.getElementById('readingThoughts').value.trim();
+
+            if (bookName && duration && date) {
+                addReading(bookName, duration, thoughts, date);
+                document.getElementById('bookName').value = '';
+                document.getElementById('readingDuration').value = '';
+                document.getElementById('readingThoughts').value = '';
+                loadStats();
+                loadHistory();
+                showNotification('阅读记录保存成功！');
+            }
+        });
+
+        function deleteReadingRecord(id) {
+            confirmDialog('确定要删除这条阅读记录吗？', () => {
+                deleteReading(id);
+                loadStats();
+                loadHistory();
+                showNotification('记录已删除');
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
