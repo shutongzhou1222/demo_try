@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Tracker - 个人生活记录</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-heart"></i> Life Tracker</h1>
+            <p>记录生活，追踪目标，管理每一天</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html" class="active"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办事项</a></li>
+                <li><a href="goal.html"><i class="fas fa-bullseye"></i> 小目标</a></li>
+                <li><a href="diary.html"><i class="fas fa-book"></i> 心情日记</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <!-- Statistics Section -->
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-chart-line"></i> 数据概览</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="todoTotal">0</div>
+                        <div class="stat-label">待办事项</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todoCompleted">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="goalTotal">0</div>
+                        <div class="stat-label">小目标</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="diaryTotal">0</div>
+                        <div class="stat-label">日记篇数</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-bolt"></i> 快捷入口</h2>
+                <div class="feature-grid">
+                    <a href="todo.html" class="feature-card todo">
+                        <div class="feature-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3>每日待办</h3>
+                        <p>管理日常任务，提高工作效率</p>
+                    </a>
+                    <a href="goal.html" class="feature-card goal">
+                        <div class="feature-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <h3>小目标</h3>
+                        <p>设定目标，追踪进度，实现梦想</p>
+                    </a>
+                    <a href="diary.html" class="feature-card diary">
+                        <div class="feature-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3>心情日记</h3>
+                        <p>记录心情，留下美好回忆</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-clock"></i> 最近动态</h2>
+                <div id="recentActivity">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>暂无动态</h3>
+                        <p>开始记录你的生活吧！</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: #f56565;"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load statistics
+            loadStats();
+            
+            // Load recent activity
+            loadRecentActivity();
+        });
+
+        function loadStats() {
+            const todoStats = getTodoStats();
+            const goalStats = getGoalStats();
+            const diaryStats = getDiaryStats();
+
+            document.getElementById('todoTotal').textContent = todoStats.total;
+            document.getElementById('todoCompleted').textContent = todoStats.completed;
+            document.getElementById('goalTotal').textContent = goalStats.total;
+            document.getElementById('diaryTotal').textContent = diaryStats.total;
+        }
+
+        function loadRecentActivity() {
+            const container = document.getElementById('recentActivity');
+            
+            // Get recent items from all categories
+            const todos = getTodos().slice(-3).reverse();
+            const goals = getGoals().slice(-2).reverse();
+            const diaries = getDiaries().slice(-3).reverse();
+            
+            const activities = [];
+            
+            todos.forEach(todo => {
+                activities.push({
+                    type: 'todo',
+                    text: todo.text,
+                    time: todo.createdAt,
+                    status: todo.completed ? '已完成' : '待完成',
+                    icon: 'fa-check-circle',
+                    color: todo.completed ? '#48bb78' : '#667eea'
+                });
+            });
+            
+            goals.forEach(goal => {
+                activities.push({
+                    type: 'goal',
+                    text: goal.title,
+                    time: goal.createdAt,
+                    status: `进度 ${goal.progress}%`,
+                    icon: 'fa-bullseye',
+                    color: '#f5576c'
+                });
+            });
+            
+            diaries.forEach(diary => {
+                activities.push({
+                    type: 'diary',
+                    text: diary.content.substring(0, 50) + (diary.content.length > 50 ? '...' : ''),
+                    time: diary.createdAt,
+                    status: MOODS[diary.mood]?.label || '记录心情',
+                    icon: 'fa-book',
+                    color: '#4facfe'
+                });
+            });
+            
+            // Sort by time
+            activities.sort((a, b) => new Date(b.time) - new Date(a.time));
+            
+            // Take top 5
+            const recentActivities = activities.slice(0, 5);
+            
+            if (recentActivities.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>暂无动态</h3>
+                        <p>开始记录你的生活吧！</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="todo-list">
+                    ${recentActivities.map(activity => `
+                        <div class="todo-item" style="background: white; border-left: 4px solid ${activity.color};">
+                            <div class="todo-checkbox" style="border-color: ${activity.color}; color: ${activity.color};">
+                                <i class="fas ${activity.icon}"></i>
+                            </div>
+                            <div class="todo-text">
+                                <div style="font-weight: 500;">${activity.text}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+                                    ${formatDateTime(activity.time)} · ${activity.status}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
