@@ -342,17 +342,17 @@
                     let endTop = endH * hourHeight + (endM / 60) * hourHeight;
                     if (endTop <= startTop) endTop = startTop + 30;
                     
-                    const height = endTop - startTop;
+                    const height = Math.max(endTop - startTop, 35);
                     
                     const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
                     const timeDisplay = schedule.endTime ? `${schedule.startTime} - ${schedule.endTime}` : schedule.startTime;
                     
                     html += `
-                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 60px; right: 10px; height: ${height}px; background: ${cat.color}20; border-left: 4px solid ${cat.color}; border-radius: 4px; padding: 5px 10px; overflow: hidden;">
-                            <div style="font-size: 0.8rem; font-weight: 600; color: ${cat.color};">${timeDisplay}</div>
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">${escapeHtml(schedule.title)}</div>
-                            ${schedule.location ? `<div style="font-size: 0.7rem; color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
-                            <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 5px; right: 5px; padding: 2px 5px;">
+                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 60px; right: 10px; height: ${height}px; background: ${cat.color}20; border-left: 4px solid ${cat.color}; border-radius: 4px; padding: 5px 10px; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
+                            <div style="font-size: 0.75rem; font-weight: 600; color: ${cat.color};">${timeDisplay}</div>
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(schedule.title)}</div>
+                            ${schedule.location && height > 50 ? `<div style="font-size: 0.7rem; color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                            <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 2px; right: 2px; padding: 2px 5px; font-size: 0.6rem;">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
