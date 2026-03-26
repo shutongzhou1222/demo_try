@@ -320,46 +320,55 @@
 
             const hourHeight = 60;
             
-            let html = '<div class="full-timeline" style="padding: 20px 0;">';
+            let html = `<div class="full-timeline" style="position: relative; min-height: ${24 * hourHeight}px; padding: 10px 0 10px 50px;">`;
             
-            if (schedules.length === 0) {
-                html += '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">当日暂无日程安排</div>';
-            } else {
+            for (let h = 0; h < 24; h++) {
+                const hourStr = h.toString().padStart(2, '0') + ':00';
+                html += `
+                    <div style="position: absolute; left: 0; top: ${h * hourHeight}px; width: 45px; text-align: center; font-size: 0.7rem; color: var(--text-secondary);">
+                        ${hourStr}
+                    </div>
+                `;
+            }
+
+            if (schedules.length > 0) {
                 schedules.forEach((schedule) => {
+                    const [startH, startM] = schedule.startTime.split(':').map(Number);
+                    const endTime = schedule.endTime ? schedule.endTime : schedule.startTime;
+                    const [endH, endM] = endTime.split(':').map(Number);
+                    
+                    const startTop = startH * hourHeight + (startM / 60) * hourHeight;
+                    let endTop = endH * hourHeight + (endM / 60) * hourHeight;
+                    if (endTop <= startTop) endTop = startTop + 30;
+                    const height = Math.max(endTop - startTop, 40);
+                    
                     const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
                     const timeDisplay = schedule.endTime ? `${schedule.startTime} - ${schedule.endTime}` : schedule.startTime;
                     
                     html += `
-                        <div style="display: flex; align-items: flex-start; margin-bottom: 16px; position: relative;">
-                            <div style="width: 50px; text-align: center; font-size: 0.7rem; color: var(--text-secondary); flex-shrink: 0; padding-top: 8px;">
-                                ${schedule.startTime}
+                        <div style="position: absolute; top: ${startTop}px; left: 50px; right: 10px; height: ${height}px; background: linear-gradient(135deg, ${cat.color}08 0%, ${cat.color}15 100%); border-left: 3px solid ${cat.color}; border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <span style="font-size: 0.65rem; font-weight: 600; color: ${cat.color}; background: ${cat.color}15; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">
+                                    ${timeDisplay}
+                                </span>
+                                <span style="font-size: 0.6rem; padding: 2px 6px; background: ${cat.color}; color: white; border-radius: 8px; white-space: nowrap;">
+                                    ${cat.label}
+                                </span>
                             </div>
-                            <div style="position: relative; width: 20px; flex-shrink: 0;">
-                                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${cat.color}; position: absolute; left: 6px; top: 8px;"></div>
-                                <div style="position: absolute; left: 9px; top: 16px; width: 2px; height: calc(100% + 4px); background: linear-gradient(to bottom, ${cat.color}, transparent);"></div>
-                            </div>
-                            <div style="flex: 1; margin-left: 8px; background: linear-gradient(135deg, ${cat.color}08 0%, ${cat.color}15 100%); border-left: 3px solid ${cat.color}; border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                    <span style="font-size: 0.65rem; font-weight: 600; color: ${cat.color}; background: ${cat.color}15; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">
-                                        ${timeDisplay}
-                                    </span>
-                                    <span style="font-size: 0.6rem; padding: 2px 6px; background: ${cat.color}; color: white; border-radius: 8px; white-space: nowrap;">
-                                        ${cat.label}
-                                    </span>
+                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                <div style="flex: 1; font-weight: 500; color: var(--text-primary); font-size: 0.85rem; word-break: break-word;">
+                                    ${escapeHtml(schedule.title)}
                                 </div>
-                                <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                    <div style="flex: 1; font-weight: 500; color: var(--text-primary); font-size: 0.85rem; word-break: break-word;">
-                                        ${escapeHtml(schedule.title)}
-                                    </div>
-                                    ${schedule.location ? `<div style="font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
-                                </div>
-                                <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 8px; right: 8px; padding: 4px 6px; font-size: 0.65rem; opacity: 0.4;">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                ${schedule.location ? `<div style="font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
                             </div>
+                            <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 6px; right: 6px; padding: 3px 6px; font-size: 0.6rem; opacity: 0.4;">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     `;
                 });
+            } else {
+                html += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, 50%); text-align: center; color: var(--text-secondary);">当日暂无日程安排</div>';
             }
             
             html += '</div>';
