@@ -295,6 +295,15 @@ function saveDiaries(diaries) {
     localStorage.setItem(getUserKey('diaries'), JSON.stringify(diaries));
 }
 
+function getMoods() {
+    const data = localStorage.getItem(getUserKey('moods'));
+    return data ? JSON.parse(data) : [];
+}
+
+function saveMoods(moods) {
+    localStorage.setItem(getUserKey('moods'), JSON.stringify(moods));
+}
+
 function addDiary(content, mood) {
     const diaries = getDiaries();
     const diary = {

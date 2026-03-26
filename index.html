@@ -112,6 +112,25 @@
                 <div id="todoListContainer">
                 </div>
             </section>
+
+            <!-- Mood Journal Section -->
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-heart"></i> 今日心情</h2>
+                    <button class="btn btn-primary btn-sm" onclick="openMoodModal()">
+                        <i class="fas fa-edit"></i> 记录心情
+                    </button>
+                </div>
+                <div id="todayMoodContainer">
+                    <div class="mood-empty" style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                        <i class="fas fa-smile" style="font-size: 2rem; opacity: 0.3;"></i>
+                        <p style="margin-top: 10px;">今天的心情怎么样？</p>
+                        <button class="btn btn-secondary btn-sm" onclick="openMoodModal()" style="margin-top: 10px;">
+                            <i class="fas fa-pen"></i> 写点什么
+                        </button>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <footer>
@@ -215,6 +234,48 @@
         </div>
     </div>
 
+    <div class="modal" id="moodModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-heart"></i> 记录今日心情</h3>
+                <button class="modal-close" onclick="closeMoodModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="moodForm">
+                <div class="form-group">
+                    <label>今天的心情</label>
+                    <div class="mood-selector">
+                        <button type="button" class="mood-option" data-mood="great" onclick="selectMood(this)">
+                            😄
+                        </button>
+                        <button type="button" class="mood-option" data-mood="good" onclick="selectMood(this)">
+                            🙂
+                        </button>
+                        <button type="button" class="mood-option" data-mood="okay" onclick="selectMood(this)">
+                            😐
+                        </button>
+                        <button type="button" class="mood-option" data-mood="bad" onclick="selectMood(this)">
+                            😔
+                        </button>
+                        <button type="button" class="mood-option" data-mood="terrible" onclick="selectMood(this)">
+                            😢
+                        </button>
+                    </div>
+                    <input type="hidden" id="moodValue" value="">
+                </div>
+                <div class="form-group">
+                    <label>记录一下</label>
+                    <textarea class="form-control" id="moodContent" rows="5" placeholder="今天做了哪些了不起的事情？遇到了什么挫折？有什么感想？"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeMoodModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
         let currentTimelineDate = getToday();
@@ -225,6 +286,7 @@
             loadCurrentDate();
             loadTimeline();
             loadTodos();
+            loadTodayMood();
             initIndexCategorySelector();
         });
 
@@ -250,60 +312,57 @@
             document.getElementById('currentDate').textContent = date.toLocaleDateString('zh-CN', options);
         }
 
-        function generateFullDayTimeline() {
-            const hours = [];
-            for (let i = 0; i < 24; i += 2) {
-                const hourStr = i.toString().padStart(2, '0') + ':00';
-                hours.push(`
-                    <div class="timeline-hour-item">
-                        <div class="timeline-hour-label">${hourStr}</div>
-                        <div class="timeline-hour-content">
-                            <div class="timeline-hour-line"></div>
-                        </div>
-                    </div>
-                `);
+        function generateTimeline() {
+            const schedules = getSchedulesByDate(currentTimelineDate);
+            if (schedules.length === 0) {
+                return '<div style="text-align:center;padding:40px;color:var(--text-secondary);">当日暂无日程安排</div>';
             }
-            return hours.join('');
+            
+            const allTimes = new Set();
+            schedules.forEach(s => {
+                allTimes.add(s.startTime);
+                if (s.endTime) allTimes.add(s.endTime);
+            });
+            const sortedTimes = Array.from(allTimes).sort();
+            
+            const hourHeight = 50;
+            
+            let html = '<div class="dynamic-timeline">';
+            schedules.forEach((schedule, idx) => {
+                const startIdx = sortedTimes.indexOf(schedule.startTime);
+                const endIdx = schedule.endTime ? sortedTimes.indexOf(schedule.endTime) : startIdx + 1;
+                const durationSlots = endIdx - startIdx;
+                const height = Math.max(durationSlots * hourHeight - 10, 30);
+                
+                const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
+                const timeDisplay = schedule.endTime 
+                    ? `${schedule.startTime} - ${schedule.endTime}` 
+                    : schedule.startTime;
+                
+                html += `
+                    <div class="timeline-item" style="height: ${height}px; border-left-color: ${cat.color}; margin-bottom: 10px;">
+                        <div class="timeline-time" style="color: ${cat.color};">
+                            <i class="fas fa-${cat.icon}"></i> ${timeDisplay}
+                            <span class="category-tag" style="background: ${cat.color};">${cat.label}</span>
+                        </div>
+                        <div class="timeline-title">${escapeHtml(schedule.title)}</div>
+                        ${schedule.location ? `<div class="timeline-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                        <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
         }
 
         function loadTimeline() {
-            const schedules = getSchedulesByDate(currentTimelineDate);
             const container = document.getElementById('timelineList');
             const dateDisplay = document.getElementById('timelineCurrentDate');
-
             const date = new Date(currentTimelineDate);
             dateDisplay.textContent = date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
-
-            container.innerHTML = generateFullDayTimeline();
-
-            if (schedules.length > 0) {
-                schedules.forEach((schedule) => {
-                    const hour = parseInt(schedule.startTime.split(':')[0]);
-                    const hourIndex = Math.floor(hour / 2);
-                    const timelineHour = container.querySelectorAll('.timeline-hour-item')[hourIndex];
-                    const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
-                    const timeDisplay = schedule.endTime 
-                        ? `${schedule.startTime} - ${schedule.endTime}` 
-                        : schedule.startTime;
-                    if (timelineHour) {
-                        const contentDiv = timelineHour.querySelector('.timeline-hour-content');
-                        contentDiv.innerHTML += `
-                            <div class="timeline-schedule-item" style="margin: 3px 0 3px 0; padding: 6px 10px; background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); border-left: 3px solid ${cat.color};">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <div>
-                                        <div style="font-size: 0.75rem; color: ${cat.color}; font-weight: 600;">${timeDisplay}</div>
-                                        <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">${escapeHtml(schedule.title)}</div>
-                                        ${schedule.location ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
-                                    </div>
-                                    <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="margin-left: 8px; padding: 3px 6px;">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    }
-                });
-            }
+            container.innerHTML = generateTimeline();
         }
 
         function changeTimelineDate(delta) {
@@ -435,29 +494,70 @@
     </script>
 
     <style>
-        .timeline-hour-item {
-            display: grid;
-            grid-template-columns: 50px 1fr;
-            min-height: 35px;
-            position: relative;
+        .dynamic-timeline {
+            padding: 10px 0;
         }
 
-        .timeline-hour-label {
-            font-size: 0.75rem;
+        .timeline-item {
+            margin-left: 10px;
+            padding: 10px 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .timeline-time {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .timeline-location {
+            font-size: 0.8rem;
             color: var(--text-secondary);
-            padding-right: 10px;
-            text-align: right;
         }
 
-        .timeline-hour-content {
-            position: relative;
-            padding-bottom: 5px;
+        .timeline-item .delete {
+            align-self: flex-end;
+            margin-top: -30px;
         }
 
-        .timeline-hour-line {
-            height: 1px;
-            background: var(--border-color);
-            margin-top: 8px;
+        .mood-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding: 10px 0;
+        }
+
+        .mood-option {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            background: var(--card-bg);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mood-option:hover {
+            transform: scale(1.1);
+            border-color: var(--primary-color);
+        }
+
+        .mood-option.selected {
+            border-color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.1);
         }
     </style>
     <script src="app.js"></script>
@@ -520,6 +620,131 @@
                 closeCloudSyncModal();
             }
         });
+
+        // Mood Diary Functions
+        const MOOD_LABELS = {
+            great: '超开心',
+            good: '开心',
+            okay: '一般',
+            bad: '低落',
+            terrible: '难过'
+        };
+
+        const MOOD_EMOJIS = {
+            great: '😄',
+            good: '🙂',
+            okay: '😐',
+            bad: '😔',
+            terrible: '😢'
+        };
+
+        function openMoodModal() {
+            const today = getToday();
+            const todayMoods = getMoods().filter(m => m.date === today);
+            if (todayMoods.length > 0) {
+                const mood = todayMoods[0];
+                document.getElementById('moodValue').value = mood.type;
+                document.getElementById('moodContent').value = mood.content || '';
+                document.querySelectorAll('.mood-option').forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.mood === mood.type);
+                });
+            } else {
+                document.getElementById('moodForm').reset();
+                document.querySelectorAll('.mood-option').forEach(btn => btn.classList.remove('selected'));
+                document.getElementById('moodValue').value = '';
+            }
+            document.getElementById('moodModal').classList.add('active');
+        }
+
+        function closeMoodModal() {
+            document.getElementById('moodModal').classList.remove('active');
+        }
+
+        function selectMood(btn) {
+            document.querySelectorAll('.mood-option').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('moodValue').value = btn.dataset.mood;
+        }
+
+        function loadTodayMood() {
+            const today = getToday();
+            const todayMoods = getMoods().filter(m => m.date === today);
+            const container = document.getElementById('todayMoodContainer');
+            
+            if (todayMoods.length === 0) {
+                container.innerHTML = `
+                    <div class="mood-empty" style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                        <i class="fas fa-smile" style="font-size: 2rem; opacity: 0.3;"></i>
+                        <p style="margin-top: 10px;">今天的心情怎么样？</p>
+                        <button class="btn btn-secondary btn-sm" onclick="openMoodModal()" style="margin-top: 10px;">
+                            <i class="fas fa-pen"></i> 写点什么
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const mood = todayMoods[0];
+            const emoji = MOOD_EMOJIS[mood.type] || '😐';
+            const label = MOOD_LABELS[mood.type] || '一般';
+            
+            container.innerHTML = `
+                <div class="today-mood-display" style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div style="font-size: 3rem;">${emoji}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: var(--primary-color); margin-bottom: 5px;">${label}</div>
+                        ${mood.content ? `<p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">${escapeHtml(mood.content)}</p>` : '<p style="color: var(--text-secondary); font-size: 0.9rem;">还没有写任何内容...</p>'}
+                        <button class="btn btn-secondary btn-sm" onclick="openMoodModal()" style="margin-top: 10px;">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('moodForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const moodType = document.getElementById('moodValue').value;
+            const moodContent = document.getElementById('moodContent').value.trim();
+            
+            if (!moodType) {
+                showNotification('请选择今天的心情');
+                return;
+            }
+
+            const today = getToday();
+            const moods = getMoods();
+            const todayIndex = moods.findIndex(m => m.date === today);
+            
+            if (todayIndex !== -1) {
+                moods[todayIndex] = { ...moods[todayIndex], type: moodType, content: moodContent };
+            } else {
+                moods.push({
+                    id: generateId(),
+                    date: today,
+                    type: moodType,
+                    content: moodContent,
+                    createdAt: new Date().toISOString()
+                });
+            }
+            
+            saveMoods(moods);
+            closeMoodModal();
+            loadTodayMood();
+            showNotification('心情已保存！');
+        });
+
+        document.getElementById('moodModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMoodModal();
+            }
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>
