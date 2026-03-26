@@ -335,21 +335,25 @@
                 const height = Math.max(durationSlots * hourHeight - 10, 30);
                 
                 const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
-                const timeDisplay = schedule.endTime 
-                    ? `${schedule.startTime} - ${schedule.endTime}` 
+                const timeDisplay = schedule.endTime
+                    ? `${schedule.startTime} - ${schedule.endTime}`
                     : schedule.startTime;
                 
                 html += `
-                    <div class="timeline-item" style="height: ${height}px; border-left-color: ${cat.color}; margin-bottom: 10px;">
-                        <div class="timeline-time" style="color: ${cat.color};">
-                            <i class="fas fa-${cat.icon}"></i> ${timeDisplay}
-                            <span class="category-tag" style="background: ${cat.color};">${cat.label}</span>
+                    <div class="timeline-item" style="height: ${height}px; border-left-color: ${cat.color};">
+                        <div class="timeline-time-label" style="color: ${cat.color};">${schedule.startTime}</div>
+                        <div class="timeline-dot" style="background: ${cat.color};"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time" style="color: ${cat.color};">
+                                <i class="fas fa-${cat.icon}"></i> ${timeDisplay}
+                                <span class="category-tag" style="background: ${cat.color};">${cat.label}</span>
+                            </div>
+                            <div class="timeline-title">${escapeHtml(schedule.title)}</div>
+                            ${schedule.location ? `<div class="timeline-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                            <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
-                        <div class="timeline-title">${escapeHtml(schedule.title)}</div>
-                        ${schedule.location ? `<div class="timeline-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
-                        <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
                 `;
             });
@@ -496,18 +500,44 @@
     <style>
         .dynamic-timeline {
             padding: 10px 0;
+            position: relative;
         }
 
         .timeline-item {
-            margin-left: 10px;
-            padding: 10px 15px;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 10px 15px 10px 60px;
             background: var(--card-bg);
             border-radius: 8px;
             box-shadow: var(--shadow);
             border-left: 4px solid;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+            min-height: 50px;
+        }
+
+        .timeline-time-label {
+            position: absolute;
+            left: 10px;
+            top: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            width: 45px;
+            text-align: right;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 55px;
+            top: 12px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg);
+        }
+
+        .timeline-content {
+            flex: 1;
         }
 
         .timeline-time {
@@ -527,8 +557,7 @@
         }
 
         .timeline-item .delete {
-            align-self: flex-end;
-            margin-top: -30px;
+            float: right;
         }
 
         .mood-selector {
