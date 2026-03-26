@@ -246,14 +246,16 @@
 
         function deleteSchedule(id) {
             confirmDialog('确定要删除这个日程吗？', () => {
-                deleteScheduleItem(id);
+                removeSchedule(id);
                 loadSchedule();
                 showNotification('日程已删除');
             });
         }
 
-        function deleteScheduleItem(id) {
-            deleteSchedule(id);
+        function removeSchedule(id) {
+            const schedules = getSchedules();
+            const filtered = schedules.filter(s => s.id !== id);
+            saveSchedules(filtered);
         }
 
         function escapeHtml(text) {
