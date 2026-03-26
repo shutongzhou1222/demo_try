@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card fade-in">
+            <div class="login-header">
+                <h1><i class="fas fa-heart"></i> Life Tracker</h1>
+                <p>把每天的小确幸都记录下来，你超棒的！</p>
+            </div>
+
+            <div class="login-tabs">
+                <button class="login-tab active" onclick="switchTab('login')">登录</button>
+                <button class="login-tab" onclick="switchTab('register')">注册</button>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> 昵称</label>
+                    <input type="text" id="loginNickname" placeholder="请输入昵称" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 密码</label>
+                    <input type="password" id="loginPassword" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> 登录
+                </button>
+            </form>
+
+            <form id="registerForm" class="login-form" style="display: none;">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> 昵称</label>
+                    <input type="text" id="registerNickname" placeholder="请输入昵称（2-10个字符）" required minlength="2" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 密码</label>
+                    <input type="password" id="registerPassword" placeholder="请输入密码（6位以上）" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 确认密码</label>
+                    <input type="password" id="registerConfirmPassword" placeholder="请再次输入密码" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-user-plus"></i> 注册
+                </button>
+            </form>
+
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if (isLoggedIn()) {
+            window.location.href = 'index.html';
+        }
+
+        function switchTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const tabs = document.querySelectorAll('.login-tab');
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = '';
+            errorDiv.style.display = 'none';
+
+            if (tab === 'login') {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                tabs[0].classList.remove('active');
+                tabs[1].classList.add('active');
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nickname = document.getElementById('loginNickname').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            const users = JSON.parse(localStorage.getItem('lifeTracker_users') || '{}');
+            const encodedPassword = btoa(password);
+
+            if (!users[nickname]) {
+                errorDiv.textContent = '该昵称未注册，请先注册！';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (users[nickname].password !== encodedPassword) {
+                errorDiv.textContent = '密码错误，请重新输入！';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            localStorage.setItem('lifeTracker_currentUser', nickname);
+            window.location.href = 'index.html';
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nickname = document.getElementById('registerNickname').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (nickname.length < 2 || nickname.length > 10) {
+                errorDiv.textContent = '昵称长度需在2-10个字符之间！';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorDiv.textContent = '密码长度需在6位以上！';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = '两次输入的密码不一致！';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('lifeTracker_users') || '{}');
+
+            if (users[nickname]) {
+                errorDiv.textContent = '该昵称已被注册，请选择其他昵称！';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            users[nickname] = {
+                password: btoa(password),
+                createdAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('lifeTracker_users', JSON.stringify(users));
+            localStorage.setItem('lifeTracker_currentUser', nickname);
+
+            alert('注册成功！欢迎 ' + nickname + ' 加入 Life Tracker！');
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

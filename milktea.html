@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奶茶记录 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <script src="app.js"></script>
+    <script>
+        if (!isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-coffee"></i> 奶茶记录</h1>
+            <p>记录每日的甜蜜时刻</p>
+            <div class="user-info">
+                <span class="user-welcome">欢迎 <span id="currentUserName"></span></span>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 退出</button>
+            </div>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理期</a></li>
+                <li><a href="stats.html"><i class="fas fa-chart-bar"></i> 数据统计</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-chart-pie"></i> 记录统计</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">总杯数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="weekCount">0</div>
+                        <div class="stat-label">本周</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="monthCount">0</div>
+                        <div class="stat-label">本月</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-pen"></i> 记录奶茶</h2>
+                <form id="milkteaForm">
+                    <div class="form-group">
+                        <label>奶茶名称（可选）</label>
+                        <input type="text" class="form-control" id="milkteaName" placeholder="例如：珍珠奶茶、芋泥波波...">
+                    </div>
+                    <div class="form-group">
+                        <label>甜度</label>
+                        <select class="form-control" id="milkteaSweetness">
+                            <option value="正常甜">正常甜</option>
+                            <option value="七分糖">七分糖</option>
+                            <option value="五分糖">五分糖</option>
+                            <option value="三分糖">三分糖</option>
+                            <option value="无糖">无糖</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>温度</label>
+                        <select class="form-control" id="milkteaTemp">
+                            <option value="去冰">去冰</option>
+                            <option value="少冰">少冰</option>
+                            <option value="正常冰">正常冰</option>
+                            <option value="常温">常温</option>
+                            <option value="热">热</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input type="date" class="form-control" id="milkteaDate">
+                    </div>
+                    <div class="form-group">
+                        <label>备注（可选）</label>
+                        <textarea class="form-control" id="milkteaNotes" rows="2" placeholder="写下备注..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存记录
+                    </button>
+                </form>
+            </section>
+
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> 记录历史</h2>
+                </div>
+                <div id="milkteaHistory">
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadHistory();
+
+            document.getElementById('milkteaDate').value = getToday();
+        });
+
+        function loadStats() {
+            const stats = getMilkteaStats();
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('weekCount').textContent = stats.week;
+            document.getElementById('monthCount').textContent = stats.month;
+        }
+
+        function loadHistory() {
+            const records = getMilkteas();
+            const container = document.getElementById('milkteaHistory');
+
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-coffee"></i>
+                        <h3>暂无记录</h3>
+                        <p>开始记录你的奶茶时光吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = records.slice(0, 20).map(record => `
+                <div class="milktea-record">
+                    <div class="milktea-record-header">
+                        <span class="milktea-record-name">${escapeHtml(record.name || '奶茶')}</span>
+                        <span class="milktea-record-date">${formatDate(record.date)}</span>
+                    </div>
+                    <div class="milktea-record-details">
+                        <span><i class="fas fa-cube"></i> ${record.sweetness}</span>
+                        <span><i class="fas fa-temperature-low"></i> ${record.temp}</span>
+                    </div>
+                    ${record.notes ? `<div class="milktea-record-notes">${escapeHtml(record.notes)}</div>` : ''}
+                    <button class="todo-btn delete" onclick="deleteMilkteaRecord('${record.id}')" title="删除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('milkteaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('milkteaName').value.trim();
+            const sweetness = document.getElementById('milkteaSweetness').value;
+            const temp = document.getElementById('milkteaTemp').value;
+            const date = document.getElementById('milkteaDate').value;
+            const notes = document.getElementById('milkteaNotes').value.trim();
+
+            if (date) {
+                addMilktea(name, sweetness, temp, date, notes);
+                document.getElementById('milkteaForm').reset();
+                document.getElementById('milkteaDate').value = getToday();
+                loadStats();
+                loadHistory();
+                showNotification('记录保存成功！');
+            }
+        });
+
+        function deleteMilkteaRecord(id) {
+            confirmDialog('确定要删除这条记录吗？', () => {
+                deleteMilktea(id);
+                loadStats();
+                loadHistory();
+                showNotification('记录已删除');
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+    <script>
+        document.getElementById('currentUserName').textContent = getCurrentUser();
+    </script>
+</body>
+</html>

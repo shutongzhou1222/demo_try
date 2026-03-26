@@ -8,10 +8,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <script src="app.js"></script>
+    <script>
+        if (!isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+    </script>
     <div class="container">
         <header>
-            <h1><i class="fas fa-check-circle"></i> 每日待办</h1>
-            <p>高效管理你的每一天</p>
+            <h1><i class="fas fa-check-circle"></i> 今日打怪清单</h1>
+            <p>慢慢通关中</p>
+            <div class="user-info">
+                <span class="user-welcome">欢迎 <span id="currentUserName"></span></span>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 退出</button>
+            </div>
         </header>
 
         <nav>
@@ -19,10 +29,8 @@
                 <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
                 <li><a href="todo.html" class="active"><i class="fas fa-check-circle"></i> 待办</a></li>
                 <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
-                <li><a href="exercise.html"><i class="fas fa-running"></i> 运动</a></li>
-                <li><a href="reading.html"><i class="fas fa-book"></i> 读书</a></li>
-                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理</a></li>
-                <li><a href="travel.html"><i class="fas fa-plane"></i> 出行</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理期</a></li>
+                <li><a href="stats.html"><i class="fas fa-chart-bar"></i> 数据统计</a></li>
             </ul>
         </nav>
 
@@ -254,6 +262,9 @@
                 closeEditModal();
             }
         });
+    </script>
+    <script>
+        document.getElementById('currentUserName').textContent = getCurrentUser();
     </script>
 </body>
 </html>

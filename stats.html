@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据统计 - Life Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <script src="app.js"></script>
+    <script>
+        if (!isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-bar"></i> 数据统计</h1>
+            <p>每一笔记录都是勋章</p>
+            <div class="user-info">
+                <span class="user-welcome">欢迎 <span id="currentUserName"></span></span>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 退出</button>
+            </div>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="todo.html"><i class="fas fa-check-circle"></i> 待办</a></li>
+                <li><a href="schedule.html"><i class="fas fa-clock"></i> 日程</a></li>
+                <li><a href="period.html"><i class="fas fa-heartbeat"></i> 生理期</a></li>
+                <li><a href="stats.html" class="active"><i class="fas fa-chart-bar"></i> 数据统计</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-check-circle"></i> 待办统计</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalTodos">0</div>
+                        <div class="stat-label">全部任务</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="completedTodos">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="pendingTodos">0</div>
+                        <div class="stat-label">待完成</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayTodos">0</div>
+                        <div class="stat-label">今日待办</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-running"></i> 运动统计</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="weekExerciseCount">0</div>
+                        <div class="stat-label">本周运动次数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="monthExerciseCount">0</div>
+                        <div class="stat-label">本月运动次数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="weekExerciseMinutes">0</div>
+                        <div class="stat-label">本周时长(分钟)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="monthExerciseMinutes">0</div>
+                        <div class="stat-label">本月时长(分钟)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-book"></i> 读书统计</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalBooks">0</div>
+                        <div class="stat-label">阅读书籍总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalReadingMinutes">0</div>
+                        <div class="stat-label">阅读总时长(分钟)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-coffee"></i> 奶茶统计</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalMilktea">0</div>
+                        <div class="stat-label">总杯数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="weekMilktea">0</div>
+                        <div class="stat-label">本周</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="monthMilktea">0</div>
+                        <div class="stat-label">本月</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color: var(--danger-color);"></i> by Life Tracker</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+        });
+
+        function loadStats() {
+            const todoStats = getTodoStats();
+            const today = getToday();
+            const todos = getTodos();
+
+            document.getElementById('totalTodos').textContent = todoStats.total;
+            document.getElementById('completedTodos').textContent = todoStats.completed;
+            document.getElementById('pendingTodos').textContent = todoStats.pending;
+            document.getElementById('todayTodos').textContent = todos.filter(t => t.createdAt.split('T')[0] === today && !t.completed).length;
+
+            const weekExercise = getExerciseStats('week');
+            const monthExercise = getExerciseStats('month');
+            document.getElementById('weekExerciseCount').textContent = weekExercise.count;
+            document.getElementById('monthExerciseCount').textContent = monthExercise.count;
+            document.getElementById('weekExerciseMinutes').textContent = weekExercise.totalMinutes;
+            document.getElementById('monthExerciseMinutes').textContent = monthExercise.totalMinutes;
+
+            const readingStats = getReadingStats();
+            document.getElementById('totalBooks').textContent = readingStats.total;
+            document.getElementById('totalReadingMinutes').textContent = readingStats.totalMinutes;
+
+            const milkteaStats = getMilkteaStats();
+            document.getElementById('totalMilktea').textContent = milkteaStats.total;
+            document.getElementById('weekMilktea').textContent = milkteaStats.week;
+            document.getElementById('monthMilktea').textContent = milkteaStats.month;
+        }
+    </script>
+    <script>
+        document.getElementById('currentUserName').textContent = getCurrentUser();
+    </script>
+</body>
+</html>

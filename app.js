@@ -1,16 +1,40 @@
 // Life Tracker App - Main JavaScript File
-// Data Storage using localStorage
+// Data Storage using localStorage with Multi-User Support
 
 const StorageKeys = {
-    TODOS: 'lifeTracker_todos',
-    GOALS: 'lifeTracker_goals',
-    DIARIES: 'lifeTracker_diaries',
-    SCHEDULES: 'lifeTracker_schedules',
-    EXERCISES: 'lifeTracker_exercises',
-    READINGS: 'lifeTracker_readings',
-    PERIODS: 'lifeTracker_periods',
-    TRAVELS: 'lifeTracker_travels'
+    USERS: 'lifeTracker_users',
+    CURRENT_USER: 'lifeTracker_currentUser'
 };
+
+function getUserPrefix() {
+    const currentUser = localStorage.getItem(StorageKeys.CURRENT_USER);
+    return currentUser ? `lifeTracker_${currentUser}_` : '';
+}
+
+function getUserKey(baseKey) {
+    return getUserPrefix() + baseKey;
+}
+
+function isLoggedIn() {
+    return !!localStorage.getItem(StorageKeys.CURRENT_USER);
+}
+
+function getCurrentUser() {
+    return localStorage.getItem(StorageKeys.CURRENT_USER);
+}
+
+function logout() {
+    localStorage.removeItem(StorageKeys.CURRENT_USER);
+    window.location.href = 'login.html';
+}
+
+function requireAuth() {
+    if (!isLoggedIn()) {
+        window.location.href = 'login.html';
+        return false;
+    }
+    return true;
+}
 
 // ==================== Utility Functions ====================
 
@@ -46,12 +70,12 @@ function getToday() {
 // ==================== Todo Functions ====================
 
 function getTodos() {
-    const data = localStorage.getItem(StorageKeys.TODOS);
+    const data = localStorage.getItem(getUserKey('todos'));
     return data ? JSON.parse(data) : [];
 }
 
 function saveTodos(todos) {
-    localStorage.setItem(StorageKeys.TODOS, JSON.stringify(todos));
+    localStorage.setItem(getUserKey('todos'), JSON.stringify(todos));
 }
 
 function addTodo(text) {
@@ -103,12 +127,12 @@ function getTodoStats() {
 // ==================== Goal Functions ====================
 
 function getGoals() {
-    const data = localStorage.getItem(StorageKeys.GOALS);
+    const data = localStorage.getItem(getUserKey('goals'));
     return data ? JSON.parse(data) : [];
 }
 
 function saveGoals(goals) {
-    localStorage.setItem(StorageKeys.GOALS, JSON.stringify(goals));
+    localStorage.setItem(getUserKey('goals'), JSON.stringify(goals));
 }
 
 function addGoal(title, description, targetDate) {
@@ -172,12 +196,12 @@ const MOODS = {
 };
 
 function getDiaries() {
-    const data = localStorage.getItem(StorageKeys.DIARIES);
+    const data = localStorage.getItem(getUserKey('diaries'));
     return data ? JSON.parse(data) : [];
 }
 
 function saveDiaries(diaries) {
-    localStorage.setItem(StorageKeys.DIARIES, JSON.stringify(diaries));
+    localStorage.setItem(getUserKey('diaries'), JSON.stringify(diaries));
 }
 
 function addDiary(content, mood) {
@@ -351,12 +375,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // ==================== Schedule (日程) Functions ====================
 
 function getSchedules() {
-    const data = localStorage.getItem(StorageKeys.SCHEDULES);
+    const data = localStorage.getItem(getUserKey('schedules'));
     return data ? JSON.parse(data) : [];
 }
 
 function saveSchedules(schedules) {
-    localStorage.setItem(StorageKeys.SCHEDULES, JSON.stringify(schedules));
+    localStorage.setItem(getUserKey('schedules'), JSON.stringify(schedules));
 }
 
 function addSchedule(date, time, title, location) {
@@ -400,12 +424,12 @@ function getSchedulesByDate(date) {
 const EXERCISE_TYPES = ['跑步', '瑜伽', '游泳', '健身', '骑行', '跳绳', '散步', '其他'];
 
 function getExercises() {
-    const data = localStorage.getItem(StorageKeys.EXERCISES);
+    const data = localStorage.getItem(getUserKey('exercises'));
     return data ? JSON.parse(data) : [];
 }
 
 function saveExercises(exercises) {
-    localStorage.setItem(StorageKeys.EXERCISES, JSON.stringify(exercises));
+    localStorage.setItem(getUserKey('exercises'), JSON.stringify(exercises));
 }
 
 function addExercise(type, duration, date) {
@@ -462,12 +486,12 @@ function getExerciseStats(period) {
 // ==================== Reading (读书) Functions ====================
 
 function getReadings() {
-    const data = localStorage.getItem(StorageKeys.READINGS);
+    const data = localStorage.getItem(getUserKey('readings'));
     return data ? JSON.parse(data) : [];
 }
 
 function saveReadings(readings) {
-    localStorage.setItem(StorageKeys.READINGS, JSON.stringify(readings));
+    localStorage.setItem(getUserKey('readings'), JSON.stringify(readings));
 }
 
 function addReading(bookName, duration, thoughts, date) {
@@ -501,12 +525,12 @@ function getReadingStats() {
 // ==================== Period (生理期) Functions ====================
 
 function getPeriods() {
-    const data = localStorage.getItem(StorageKeys.PERIODS);
+    const data = localStorage.getItem(getUserKey('periods'));
     return data ? JSON.parse(data) : [];
 }
 
 function savePeriods(periods) {
-    localStorage.setItem(StorageKeys.PERIODS, JSON.stringify(periods));
+    localStorage.setItem(getUserKey('periods'), JSON.stringify(periods));
 }
 
 function addPeriod(startDate, endDate, notes) {
@@ -614,4 +638,54 @@ function getGreeting() {
 function getDayOfWeek() {
     const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     return days[new Date().getDay()];
+}
+
+// ==================== Milktea (奶茶) Functions ====================
+
+function getMilkteas() {
+    const data = localStorage.getItem(getUserKey('milkteas'));
+    return data ? JSON.parse(data) : [];
+}
+
+function saveMilkteas(milkteas) {
+    localStorage.setItem(getUserKey('milkteas'), JSON.stringify(milkteas));
+}
+
+function addMilktea(name, sweetness, temp, date, notes) {
+    const milkteas = getMilkteas();
+    const milktea = {
+        id: generateId(),
+        name: name || '',
+        sweetness: sweetness,
+        temp: temp,
+        date: date || getToday(),
+        notes: notes || '',
+        createdAt: new Date().toISOString()
+    };
+    milkteas.unshift(milktea);
+    saveMilkteas(milkteas);
+    return milktea;
+}
+
+function deleteMilktea(id) {
+    const milkteas = getMilkteas();
+    const filtered = milkteas.filter(m => m.id !== id);
+    saveMilkteas(filtered);
+}
+
+function getMilkteaStats() {
+    const milkteas = getMilkteas();
+    const now = new Date();
+
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const total = milkteas.length;
+    const week = milkteas.filter(m => new Date(m.date) >= weekStart).length;
+    const month = milkteas.filter(m => new Date(m.date) >= monthStart).length;
+
+    return { total, week, month };
 }
