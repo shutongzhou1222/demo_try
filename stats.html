@@ -110,6 +110,12 @@
                     </div>
                 </div>
             </section>
+
+            <section class="card fade-in">
+                <h2 class="card-title"><i class="fas fa-heart"></i> 心情统计</h2>
+                <div class="stats-container" id="moodStatsContainer">
+                </div>
+            </section>
         </main>
 
         <footer>
@@ -148,6 +154,64 @@
             document.getElementById('totalMilktea').textContent = milkteaStats.total;
             document.getElementById('weekMilktea').textContent = milkteaStats.week;
             document.getElementById('monthMilktea').textContent = milkteaStats.month;
+
+            loadMoodStats();
+        }
+
+        function loadMoodStats() {
+            const moods = getMoods();
+            const container = document.getElementById('moodStatsContainer');
+            
+            const moodCounts = {
+                great: 0,
+                good: 0,
+                okay: 0,
+                bad: 0,
+                terrible: 0
+            };
+            
+            moods.forEach(m => {
+                if (m.type && moodCounts.hasOwnProperty(m.type)) {
+                    moodCounts[m.type]++;
+                }
+            });
+
+            const moodLabels = {
+                great: '超开心',
+                good: '开心',
+                okay: '一般',
+                bad: '低落',
+                terrible: '难过'
+            };
+
+            const moodEmojis = {
+                great: '😄',
+                good: '🙂',
+                okay: '😐',
+                bad: '😔',
+                terrible: '😢'
+            };
+
+            const total = moods.length;
+            
+            if (total === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">暂无心情记录</p>';
+                return;
+            }
+
+            let html = '';
+            for (const [mood, count] of Object.entries(moodCounts)) {
+                const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                html += `
+                    <div class="stat-card">
+                        <div style="font-size: 2rem; margin-bottom: 5px;">${moodEmojis[mood]}</div>
+                        <div class="stat-number">${count}</div>
+                        <div class="stat-label">${moodLabels[mood]}</div>
+                        <div style="margin-top: 5px; font-size: 0.8rem; color: var(--text-secondary);">${percentage}%</div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
         }
     </script>
     <script>

@@ -96,23 +96,6 @@
                 </div>
             </section>
 
-            <!-- Todo Section - 今日/明日/本周 -->
-            <section class="card fade-in">
-                <div class="section-header">
-                    <h2><i class="fas fa-check-circle"></i> 待办事项</h2>
-                    <a href="todo.html" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus"></i> 查看全部
-                    </a>
-                </div>
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="today" onclick="switchTodoFilter('today')">今日待办</button>
-                    <button class="filter-tab" data-filter="tomorrow" onclick="switchTodoFilter('tomorrow')">明日待办</button>
-                    <button class="filter-tab" data-filter="week" onclick="switchTodoFilter('week')">本周待办</button>
-                </div>
-                <div id="todoListContainer">
-                </div>
-            </section>
-
             <!-- Mood Journal Section -->
             <section class="card fade-in">
                 <div class="section-header">
@@ -129,6 +112,23 @@
                             <i class="fas fa-pen"></i> 写点什么
                         </button>
                     </div>
+                </div>
+            </section>
+
+            <!-- Todo Section - 今日/明日/本周 -->
+            <section class="card fade-in">
+                <div class="section-header">
+                    <h2><i class="fas fa-check-circle"></i> 待办事项</h2>
+                    <a href="todo.html" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> 查看全部
+                    </a>
+                </div>
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="today" onclick="switchTodoFilter('today')">今日待办</button>
+                    <button class="filter-tab" data-filter="tomorrow" onclick="switchTodoFilter('tomorrow')">明日待办</button>
+                    <button class="filter-tab" data-filter="week" onclick="switchTodoFilter('week')">本周待办</button>
+                </div>
+                <div id="todoListContainer">
                 </div>
             </section>
         </main>
