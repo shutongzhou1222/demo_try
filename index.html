@@ -320,14 +320,14 @@
 
             const hourHeight = 50;
             
-            let html = `<div class="full-timeline" style="position: relative; height: ${24 * hourHeight}px; border-left: 2px solid var(--border-color); padding-left: 0;">`;
+            let html = `<div class="full-timeline" style="position: relative; height: ${24 * hourHeight}px;">`;
             
             for (let h = 0; h < 24; h++) {
                 const hourStr = h.toString().padStart(2, '0') + ':00';
                 html += `
-                    <div class="timeline-hour-row" style="position: absolute; top: ${h * hourHeight}px; left: 0; right: 0; height: ${hourHeight}px; border-bottom: 1px solid var(--border-color); display: flex; align-items: flex-start;">
-                        <div class="timeline-hour-label" style="width: 30px; text-align: right; font-size: 0.65rem; color: var(--text-secondary); flex-shrink: 0; line-height: 1;">${hourStr}</div>
-                        <div class="timeline-hour-content" style="flex: 1; position: relative; margin-left: -1px;"></div>
+                    <div class="timeline-hour-row" style="position: absolute; top: ${h * hourHeight}px; left: 0; right: 0; height: ${hourHeight}px; display: flex; align-items: flex-start; border-bottom: 1px solid var(--border-color);">
+                        <div style="width: 40px; text-align: right; padding-right: 8px; font-size: 0.65rem; color: var(--text-secondary); border-right: 2px solid var(--text-secondary);">${hourStr}</div>
+                        <div style="flex: 1; position: relative;"></div>
                     </div>
                 `;
             }
@@ -342,16 +342,16 @@
                     let endTop = endH * hourHeight + (endM / 60) * hourHeight;
                     if (endTop <= startTop) endTop = startTop + 30;
                     
-                    const height = Math.max(endTop - startTop, 40);
+                    const height = endTop - startTop;
                     
                     const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
                     const timeDisplay = schedule.endTime ? `${schedule.startTime} - ${schedule.endTime}` : schedule.startTime;
                     
                     html += `
-                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 32px; right: 5px; height: ${height}px; background: ${cat.color}20; border-left: 4px solid ${cat.color}; border-radius: 4px; padding: 4px 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
+                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 48px; right: 0; height: ${height}px; background: ${cat.color}20; border-left: 4px solid ${cat.color}; border-radius: 4px; padding: 4px 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
                             <div style="font-size: 0.7rem; font-weight: 600; color: ${cat.color}; line-height: 1.2;">${timeDisplay}</div>
                             <div style="font-weight: 600; color: var(--text-primary); font-size: 0.8rem; line-height: 1.3; word-break: break-all;">${escapeHtml(schedule.title)}</div>
-                            ${schedule.location && height > 45 ? `<div style="font-size: 0.65rem; color: var(--text-secondary); line-height: 1.2; margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                            ${schedule.location && height > 30 ? `<div style="font-size: 0.65rem; color: var(--text-secondary); line-height: 1.2; margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
                             <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 2px; right: 2px; padding: 2px 4px; font-size: 0.55rem; line-height: 1;">
                                 <i class="fas fa-trash"></i>
                             </button>
