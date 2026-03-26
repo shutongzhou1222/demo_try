@@ -20,6 +20,7 @@
             <p>把每天的小确幸都记录下来，你超棒的！</p>
             <div class="user-info">
                 <span class="user-welcome">欢迎 <span id="currentUserName"></span></span>
+                <button class="btn-logout" onclick="openCloudSyncModal()"><i class="fas fa-cloud-upload-alt"></i> 同步</button>
                 <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 退出</button>
             </div>
         </header>
@@ -131,9 +132,15 @@
                     <label>日期</label>
                     <input type="date" class="form-control" id="scheduleDate" required>
                 </div>
-                <div class="form-group">
-                    <label>时间</label>
-                    <input type="time" class="form-control" id="scheduleTime" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>开始时间</label>
+                        <input type="time" class="form-control" id="scheduleStartTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>结束时间</label>
+                        <input type="time" class="form-control" id="scheduleEndTime">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>日程名称</label>
@@ -143,11 +150,68 @@
                     <label>地点（可选）</label>
                     <input type="text" class="form-control" id="scheduleLocation" placeholder="输入地点...">
                 </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <div class="category-selector" id="indexCategorySelector">
+                        <button type="button" class="category-btn active" data-category="work" style="--cat-color: #E74C3C;">
+                            <i class="fas fa-briefcase"></i> 工作
+                        </button>
+                        <button type="button" class="category-btn" data-category="study" style="--cat-color: #3498DB;">
+                            <i class="fas fa-book"></i> 学习
+                        </button>
+                        <button type="button" class="category-btn" data-category="entertainment" style="--cat-color: #9B59B6;">
+                            <i class="fas fa-gamepad"></i> 娱乐
+                        </button>
+                        <button type="button" class="category-btn" data-category="rest" style="--cat-color: #1ABC9C;">
+                            <i class="fas fa-bed"></i> 休息
+                        </button>
+                        <button type="button" class="category-btn" data-category="travel" style="--cat-color: #F39C12;">
+                            <i class="fas fa-plane"></i> 旅游
+                        </button>
+                        <button type="button" class="category-btn" data-category="exercise" style="--cat-color: #27AE60;">
+                            <i class="fas fa-running"></i> 运动
+                        </button>
+                        <button type="button" class="category-btn" data-category="meal" style="--cat-color: #E67E22;">
+                            <i class="fas fa-utensils"></i> 吃饭
+                        </button>
+                    </div>
+                    <input type="hidden" id="scheduleCategory" value="work">
+                </div>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">取消</button>
                     <button type="submit" class="btn btn-primary">添加</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal" id="cloudSyncModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-cloud-upload-alt"></i> 云同步设置</h3>
+                <button class="modal-close" onclick="closeCloudSyncModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div style="padding: 10px 0;">
+                <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 0.9rem;">
+                    使用 JSONBin.io 免费服务实现跨设备同步
+                </p>
+                <div class="form-group">
+                    <label>Bin ID</label>
+                    <input type="text" class="form-control" id="cloudBinId" placeholder="请输入您的 Bin ID">
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" class="form-control" id="cloudApiKey" placeholder="请输入您的 API Key">
+                </div>
+                <div id="cloudSyncStatus" style="margin-bottom: 15px; font-size: 0.85rem;"></div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCloudSyncModal()">取消</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadDataFromCloud()"><i class="fas fa-cloud-download-alt"></i> 从云端下载</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCloudSync()"><i class="fas fa-save"></i> 保存并同步</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -161,7 +225,19 @@
             loadCurrentDate();
             loadTimeline();
             loadTodos();
+            initIndexCategorySelector();
         });
+
+        function initIndexCategorySelector() {
+            const buttons = document.querySelectorAll('#indexCategorySelector .category-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById('scheduleCategory').value = this.dataset.category;
+                });
+            });
+        }
 
         function loadGreeting() {
             const greeting = getGreeting();
@@ -200,15 +276,19 @@
 
             if (schedules.length > 0) {
                 schedules.forEach((schedule) => {
-                    const hour = parseInt(schedule.time.split(':')[0]);
+                    const hour = parseInt(schedule.startTime.split(':')[0]);
                     const hourIndex = Math.floor(hour / 2);
                     const timelineHour = container.querySelectorAll('.timeline-hour-item')[hourIndex];
+                    const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
+                    const timeDisplay = schedule.endTime 
+                        ? `${schedule.startTime} - ${schedule.endTime}` 
+                        : schedule.startTime;
                     if (timelineHour) {
                         timelineHour.innerHTML += `
-                            <div class="timeline-schedule-item" style="position: relative; margin: 3px 0 3px 10px; padding: 6px 10px; background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); border-left: 3px solid var(--primary-color);">
+                            <div class="timeline-schedule-item" style="position: relative; margin: 3px 0 3px 10px; padding: 6px 10px; background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); border-left: 3px solid ${cat.color};">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                     <div>
-                                        <div style="font-size: 0.75rem; color: var(--primary-color); font-weight: 600;">${schedule.time}</div>
+                                        <div style="font-size: 0.75rem; color: ${cat.color}; font-weight: 600;">${timeDisplay}</div>
                                         <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">${escapeHtml(schedule.title)}</div>
                                         ${schedule.location ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
                                     </div>
@@ -243,16 +323,21 @@
         function closeScheduleModal() {
             document.getElementById('scheduleModal').classList.remove('active');
             document.getElementById('scheduleForm').reset();
+            document.querySelectorAll('#indexCategorySelector .category-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('#indexCategorySelector .category-btn[data-category="work"]').classList.add('active');
+            document.getElementById('scheduleCategory').value = 'work';
         }
 
         document.getElementById('scheduleForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const date = document.getElementById('scheduleDate').value;
-            const time = document.getElementById('scheduleTime').value;
+            const startTime = document.getElementById('scheduleStartTime').value;
+            const endTime = document.getElementById('scheduleEndTime').value;
             const title = document.getElementById('scheduleTitle').value.trim();
             const location = document.getElementById('scheduleLocation').value.trim();
-            if (title && date && time) {
-                addSchedule(date, time, title, location);
+            const category = document.getElementById('scheduleCategory').value;
+            if (title && date && startTime) {
+                addSchedule(date, startTime, endTime, title, location, category);
                 closeScheduleModal();
                 currentTimelineDate = date;
                 loadTimeline();
@@ -371,6 +456,63 @@
     <script src="app.js"></script>
     <script>
         document.getElementById('currentUserName').textContent = getCurrentUser();
+
+        function openCloudSyncModal() {
+            const status = getCloudSyncStatus();
+            document.getElementById('cloudBinId').value = status.binId || '';
+            document.getElementById('cloudApiKey').value = CloudSync.API_KEY || '';
+            updateCloudSyncStatus();
+            document.getElementById('cloudSyncModal').classList.add('active');
+        }
+
+        function closeCloudSyncModal() {
+            document.getElementById('cloudSyncModal').classList.remove('active');
+        }
+
+        function updateCloudSyncStatus() {
+            const status = getCloudSyncStatus();
+            const statusEl = document.getElementById('cloudSyncStatus');
+            if (status.configured) {
+                statusEl.innerHTML = `<span style="color: #27AE60;"><i class="fas fa-check-circle"></i> 已配置云同步</span>`;
+            } else {
+                statusEl.innerHTML = `<span style="color: var(--text-secondary);"><i class="fas fa-info-circle"></i> 请先配置云同步服务</span>`;
+            }
+        }
+
+        function saveCloudSync() {
+            const binId = document.getElementById('cloudBinId').value.trim();
+            const apiKey = document.getElementById('cloudApiKey').value.trim();
+            if (binId && apiKey) {
+                setupCloudSync(binId, apiKey);
+                syncAllData().then(() => {
+                    showNotification('数据已同步到云端！');
+                    closeCloudSyncModal();
+                });
+            } else {
+                showNotification('请输入完整的 Bin ID 和 API Key');
+            }
+        }
+
+        async function loadDataFromCloud() {
+            const binId = document.getElementById('cloudBinId').value.trim();
+            const apiKey = document.getElementById('cloudApiKey').value.trim();
+            if (binId && apiKey) {
+                setupCloudSync(binId, apiKey);
+                await loadAllDataFromCloud();
+                showNotification('数据已从云端下载！');
+                closeCloudSyncModal();
+                loadTimeline();
+                loadTodos();
+            } else {
+                showNotification('请输入完整的 Bin ID 和 API Key');
+            }
+        }
+
+        document.getElementById('cloudSyncModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCloudSyncModal();
+            }
+        });
     </script>
 </body>
 </html>

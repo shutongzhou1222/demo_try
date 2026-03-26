@@ -6,6 +6,12 @@ const StorageKeys = {
     CURRENT_USER: 'lifeTracker_currentUser'
 };
 
+const CloudSync = {
+    BIN_ID: localStorage.getItem('lifeTracker_cloudBinId') || '',
+    API_KEY: localStorage.getItem('lifeTracker_cloudApiKey') || '',
+    API_URL: 'https://api.jsonbin.io/v3/b/'
+};
+
 function getUserPrefix() {
     const currentUser = localStorage.getItem(StorageKeys.CURRENT_USER);
     return currentUser ? `lifeTracker_${currentUser}_` : '';
@@ -34,6 +40,91 @@ function requireAuth() {
         return false;
     }
     return true;
+}
+
+async function syncToCloud(data) {
+    if (!CloudSync.BIN_ID || !CloudSync.API_KEY) return null;
+    try {
+        const response = await fetch(CloudSync.API_URL + CloudSync.BIN_ID, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': CloudSync.API_KEY
+            },
+            body: JSON.stringify(data)
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Sync to cloud failed:', error);
+        return null;
+    }
+}
+
+async function loadFromCloud() {
+    if (!CloudSync.BIN_ID || !CloudSync.API_KEY) return null;
+    try {
+        const response = await fetch(CloudSync.API_URL + CloudSync.BIN_ID + '/latest', {
+            headers: {
+                'X-Master-Key': CloudSync.API_KEY
+            }
+        });
+        if (response.ok) {
+            const result = await response.json();
+            return result.record;
+        }
+        return null;
+    } catch (error) {
+        console.error('Load from cloud failed:', error);
+        return null;
+    }
+}
+
+async function syncAllData() {
+    const username = getCurrentUser();
+    if (!username || !CloudSync.BIN_ID) return;
+    
+    const data = {
+        schedules: getSchedules(),
+        todos: getTodos(),
+        diary: getDiaries(),
+        mood: getMoods(),
+        exercise: getExercises(),
+        period: getPeriodRecords(),
+        sleep: getSleepRecords(),
+        water: getWaterRecords(),
+        lastSync: new Date().toISOString()
+    };
+    
+    await syncToCloud(data);
+}
+
+async function loadAllDataFromCloud() {
+    const data = await loadFromCloud();
+    if (!data) return;
+    
+    if (data.schedules) saveSchedules(data.schedules);
+    if (data.todos) saveTodos(data.todos);
+    if (data.diary) saveDiaries(data.diary);
+    if (data.mood) saveMoods(data.mood);
+    if (data.exercise) saveExercises(data.exercise);
+    if (data.period) savePeriodRecords(data.period);
+    if (data.sleep) saveSleepRecords(data.sleep);
+    if (data.water) saveWaterRecords(data.water);
+}
+
+function setupCloudSync(binId, apiKey) {
+    localStorage.setItem('lifeTracker_cloudBinId', binId);
+    localStorage.setItem('lifeTracker_cloudApiKey', apiKey);
+    CloudSync.BIN_ID = binId;
+    CloudSync.API_KEY = apiKey;
+}
+
+function getCloudSyncStatus() {
+    return {
+        configured: !!(CloudSync.BIN_ID && CloudSync.API_KEY),
+        binId: CloudSync.BIN_ID,
+        lastSync: localStorage.getItem('lifeTracker_lastSync')
+    };
 }
 
 // ==================== Utility Functions ====================
@@ -374,6 +465,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ==================== Schedule (日程) Functions ====================
 
+const SCHEDULE_CATEGORIES = {
+    work: { label: '工作', color: '#E74C3C', icon: 'briefcase' },
+    study: { label: '学习', color: '#3498DB', icon: 'book' },
+    entertainment: { label: '娱乐', color: '#9B59B6', icon: 'gamepad' },
+    rest: { label: '休息', color: '#1ABC9C', icon: 'bed' },
+    travel: { label: '旅游', color: '#F39C12', icon: 'plane' },
+    exercise: { label: '运动', color: '#27AE60', icon: 'running' },
+    meal: { label: '吃饭', color: '#E67E22', icon: 'utensils' }
+};
+
 function getSchedules() {
     const data = localStorage.getItem(getUserKey('schedules'));
     return data ? JSON.parse(data) : [];
@@ -383,18 +484,21 @@ function saveSchedules(schedules) {
     localStorage.setItem(getUserKey('schedules'), JSON.stringify(schedules));
 }
 
-function addSchedule(date, time, title, location) {
+function addSchedule(date, startTime, endTime, title, location, category) {
     const schedules = getSchedules();
     const schedule = {
         id: generateId(),
         date: date,
-        time: time,
+        startTime: startTime,
+        endTime: endTime,
         title: title,
         location: location || '',
+        category: category || 'work',
         createdAt: new Date().toISOString()
     };
     schedules.push(schedule);
     saveSchedules(schedules);
+    syncAllData();
     return schedule;
 }
 
@@ -404,6 +508,7 @@ function updateSchedule(id, updates) {
     if (index !== -1) {
         schedules[index] = { ...schedules[index], ...updates };
         saveSchedules(schedules);
+        syncAllData();
         return schedules[index];
     }
     return null;
@@ -413,10 +518,11 @@ function deleteSchedule(id) {
     const schedules = getSchedules();
     const filtered = schedules.filter(s => s.id !== id);
     saveSchedules(filtered);
+    syncAllData();
 }
 
 function getSchedulesByDate(date) {
-    return getSchedules().filter(s => s.date === date).sort((a, b) => a.time.localeCompare(b.time));
+    return getSchedules().filter(s => s.date === date).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
 // ==================== Exercise (运动) Functions ====================
