@@ -318,47 +318,40 @@
             const date = new Date(currentTimelineDate);
             dateDisplay.textContent = date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
 
-            const hourHeight = 50;
+            const hourHeight = 60;
             
-            let html = `<div class="full-timeline" style="position: relative; height: ${24 * hourHeight}px; background: linear-gradient(to bottom, transparent 0%, var(--card-bg) 100%); border-radius: 8px;">`;
+            let html = '<div class="full-timeline" style="padding: 20px 0;">';
             
-            for (let h = 0; h < 24; h++) {
-                const hourStr = h.toString().padStart(2, '0') + ':00';
-                html += `
-                    <div class="timeline-hour-row" style="position: absolute; top: ${h * hourHeight}px; left: 0; right: 0; height: ${hourHeight}px; border-bottom: 1px dashed rgba(128,128,128,0.2);">
-                        <div style="position: absolute; left: 0; top: -8px; width: 45px; text-align: center; font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); background: var(--card-bg); padding: 2px 4px; border-radius: 4px;">${hourStr}</div>
-                    </div>
-                `;
-            }
-
-            if (schedules.length > 0) {
+            if (schedules.length === 0) {
+                html += '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">当日暂无日程安排</div>';
+            } else {
                 schedules.forEach((schedule) => {
-                    const [startH, startM] = schedule.startTime.split(':').map(Number);
-                    const endTime = schedule.endTime ? schedule.endTime : schedule.startTime;
-                    const [endH, endM] = endTime.split(':').map(Number);
-                    
-                    const startTop = startH * hourHeight + (startM / 60) * hourHeight;
-                    let endTop = endH * hourHeight + (endM / 60) * hourHeight;
-                    if (endTop <= startTop) endTop = startTop + 30;
-                    
-                    const height = endTop - startTop;
-                    
                     const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
                     const timeDisplay = schedule.endTime ? `${schedule.startTime} - ${schedule.endTime}` : schedule.startTime;
                     
                     html += `
-                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 55px; right: 10px; height: ${height}px; background: linear-gradient(135deg, ${cat.color}15 0%, ${cat.color}30 100%); border-left: 4px solid ${cat.color}; border-radius: 6px; padding: 6px 10px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;">
-                            <div style="font-size: 0.7rem; font-weight: 600; color: ${cat.color};">${timeDisplay}</div>
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.85rem; word-break: break-all;">${escapeHtml(schedule.title)}</div>
-                            ${schedule.location && height > 35 ? `<div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
-                            <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 4px; right: 4px; padding: 3px 6px; font-size: 0.6rem; opacity: 0.6;">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 20px; position: relative;">
+                            <div style="width: 50px; text-align: center; font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0;">
+                                ${schedule.startTime}
+                            </div>
+                            <div style="position: relative; width: 20px; flex-shrink: 0;">
+                                <div style="width: 10px; height: 10px; border-radius: 50%; background: ${cat.color}; position: absolute; left: 5px; top: 4px;"></div>
+                                <div style="position: absolute; left: 9px; top: 14px; width: 2px; height: calc(100% + 6px); background: linear-gradient(to bottom, ${cat.color}, transparent);"></div>
+                            </div>
+                            <div style="flex: 1; margin-left: 10px; background: linear-gradient(135deg, ${cat.color}08 0%, ${cat.color}15 100%); border-left: 3px solid ${cat.color}; border-radius: 8px; padding: 12px 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+                                <div style="font-size: 0.75rem; font-weight: 600; color: ${cat.color}; margin-bottom: 4px;">
+                                    <i class="fas fa-clock"></i> ${timeDisplay}
+                                    <span style="display: inline-block; padding: 2px 8px; background: ${cat.color}; color: white; border-radius: 10px; font-size: 0.65rem; margin-left: 8px;">${cat.label}</span>
+                                </div>
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.95rem; margin-bottom: 6px;">${escapeHtml(schedule.title)}</div>
+                                ${schedule.location ? `<div style="font-size: 0.75rem; color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                                <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 0.7rem; opacity: 0.5;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     `;
                 });
-            } else {
-                html += `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-secondary);">当日暂无日程安排</div>`;
             }
             
             html += '</div>';
