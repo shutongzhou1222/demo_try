@@ -106,7 +106,7 @@
                 </div>
                 <div class="filter-tabs">
                     <button class="filter-tab active" data-filter="today" onclick="switchTodoFilter('today')">今日待办</button>
-                    <button class="filter-tab" data-filter="tomorrow" onclick="switchTodoFilter('tomorrow')">明日代办</button>
+                    <button class="filter-tab" data-filter="tomorrow" onclick="switchTodoFilter('tomorrow')">明日待办</button>
                     <button class="filter-tab" data-filter="week" onclick="switchTodoFilter('week')">本周待办</button>
                 </div>
                 <div id="todoListContainer">
@@ -257,7 +257,9 @@
                 hours.push(`
                     <div class="timeline-hour-item">
                         <div class="timeline-hour-label">${hourStr}</div>
-                        <div class="timeline-hour-line"></div>
+                        <div class="timeline-hour-content">
+                            <div class="timeline-hour-line"></div>
+                        </div>
                     </div>
                 `);
             }
@@ -284,8 +286,9 @@
                         ? `${schedule.startTime} - ${schedule.endTime}` 
                         : schedule.startTime;
                     if (timelineHour) {
-                        timelineHour.innerHTML += `
-                            <div class="timeline-schedule-item" style="position: relative; margin: 3px 0 3px 10px; padding: 6px 10px; background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); border-left: 3px solid ${cat.color};">
+                        const contentDiv = timelineHour.querySelector('.timeline-hour-content');
+                        contentDiv.innerHTML += `
+                            <div class="timeline-schedule-item" style="margin: 3px 0 3px 0; padding: 6px 10px; background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); border-left: 3px solid ${cat.color};">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                     <div>
                                         <div style="font-size: 0.75rem; color: ${cat.color}; font-weight: 600;">${timeDisplay}</div>
@@ -433,21 +436,25 @@
 
     <style>
         .timeline-hour-item {
-            display: flex;
-            align-items: flex-start;
+            display: grid;
+            grid-template-columns: 50px 1fr;
             min-height: 35px;
             position: relative;
         }
 
         .timeline-hour-label {
-            width: 40px;
             font-size: 0.75rem;
             color: var(--text-secondary);
-            flex-shrink: 0;
+            padding-right: 10px;
+            text-align: right;
+        }
+
+        .timeline-hour-content {
+            position: relative;
+            padding-bottom: 5px;
         }
 
         .timeline-hour-line {
-            flex: 1;
             height: 1px;
             background: var(--border-color);
             margin-top: 8px;
