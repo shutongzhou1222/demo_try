@@ -314,59 +314,60 @@
 
         function generateTimeline() {
             const schedules = getSchedulesByDate(currentTimelineDate);
-            if (schedules.length === 0) {
-                return '<div style="text-align:center;padding:40px;color:var(--text-secondary);">当日暂无日程安排</div>';
-            }
-            
-            const allTimes = new Set();
-            schedules.forEach(s => {
-                allTimes.add(s.startTime);
-                if (s.endTime) allTimes.add(s.endTime);
-            });
-            const sortedTimes = Array.from(allTimes).sort();
-            
+            const dateDisplay = document.getElementById('timelineCurrentDate');
+            const date = new Date(currentTimelineDate);
+            dateDisplay.textContent = date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+
             const hourHeight = 50;
             
-            let html = '<div class="dynamic-timeline">';
-            schedules.forEach((schedule, idx) => {
-                const startIdx = sortedTimes.indexOf(schedule.startTime);
-                const endIdx = schedule.endTime ? sortedTimes.indexOf(schedule.endTime) : startIdx + 1;
-                const durationSlots = endIdx - startIdx;
-                const height = Math.max(durationSlots * hourHeight - 10, 30);
-                
-                const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
-                const timeDisplay = schedule.endTime
-                    ? `${schedule.startTime} - ${schedule.endTime}`
-                    : schedule.startTime;
-                
+            let html = `<div class="full-timeline" style="position: relative; height: ${24 * hourHeight}px; border-left: 2px solid var(--border-color); margin-left: 50px;">`;
+            
+            for (let h = 0; h < 24; h++) {
+                const hourStr = h.toString().padStart(2, '0') + ':00';
                 html += `
-                    <div class="timeline-item" style="height: ${height}px; border-left-color: ${cat.color};">
-                        <div class="timeline-time-label" style="color: ${cat.color};">${schedule.startTime}</div>
-                        <div class="timeline-dot" style="background: ${cat.color};"></div>
-                        <div class="timeline-content">
-                            <div class="timeline-time" style="color: ${cat.color};">
-                                <i class="fas fa-${cat.icon}"></i> ${timeDisplay}
-                                <span class="category-tag" style="background: ${cat.color};">${cat.label}</span>
-                            </div>
-                            <div class="timeline-title">${escapeHtml(schedule.title)}</div>
-                            ${schedule.location ? `<div class="timeline-location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
-                            <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除">
+                    <div class="timeline-hour-row" style="position: absolute; top: ${h * hourHeight}px; left: 0; right: 0; height: ${hourHeight}px; border-bottom: 1px solid var(--border-color); display: flex;">
+                        <div class="timeline-hour-label" style="width: 50px; text-align: right; padding-right: 10px; font-size: 0.8rem; color: var(--text-secondary); flex-shrink: 0;">${hourStr}</div>
+                        <div class="timeline-hour-content" style="flex: 1; position: relative;"></div>
+                    </div>
+                `;
+            }
+
+            if (schedules.length > 0) {
+                schedules.forEach((schedule) => {
+                    const [startH, startM] = schedule.startTime.split(':').map(Number);
+                    const endTime = schedule.endTime ? schedule.endTime : schedule.startTime;
+                    const [endH, endM] = endTime.split(':').map(Number);
+                    
+                    const startTop = startH * hourHeight + (startM / 60) * hourHeight;
+                    let endTop = endH * hourHeight + (endM / 60) * hourHeight;
+                    if (endTop <= startTop) endTop = startTop + 30;
+                    
+                    const height = endTop - startTop;
+                    
+                    const cat = SCHEDULE_CATEGORIES[schedule.category] || SCHEDULE_CATEGORIES.work;
+                    const timeDisplay = schedule.endTime ? `${schedule.startTime} - ${schedule.endTime}` : schedule.startTime;
+                    
+                    html += `
+                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 60px; right: 10px; height: ${height}px; background: ${cat.color}20; border-left: 4px solid ${cat.color}; border-radius: 4px; padding: 5px 10px; overflow: hidden;">
+                            <div style="font-size: 0.8rem; font-weight: 600; color: ${cat.color};">${timeDisplay}</div>
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">${escapeHtml(schedule.title)}</div>
+                            ${schedule.location ? `<div style="font-size: 0.7rem; color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
+                            <button class="todo-btn delete" onclick="deleteScheduleItem('${schedule.id}')" title="删除" style="position: absolute; top: 5px; right: 5px; padding: 2px 5px;">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            } else {
+                html += `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-secondary);">当日暂无日程安排</div>`;
+            }
+            
             html += '</div>';
             return html;
         }
 
         function loadTimeline() {
-            const container = document.getElementById('timelineList');
-            const dateDisplay = document.getElementById('timelineCurrentDate');
-            const date = new Date(currentTimelineDate);
-            dateDisplay.textContent = date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
-            container.innerHTML = generateTimeline();
+            document.getElementById('timelineList').innerHTML = generateTimeline();
         }
 
         function changeTimelineDate(delta) {
@@ -498,66 +499,31 @@
     </script>
 
     <style>
-        .dynamic-timeline {
-            padding: 10px 0;
+        .timeline-container {
+            max-height: 500px;
+            overflow-y: auto;
             position: relative;
         }
 
-        .timeline-item {
+        .full-timeline {
             position: relative;
+        }
+
+        .timeline-hour-row {
             display: flex;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            padding: 10px 15px 10px 60px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            border-left: 4px solid;
-            min-height: 50px;
+            align-items: center;
         }
 
-        .timeline-time-label {
-            position: absolute;
-            left: 10px;
-            top: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            width: 45px;
-            text-align: right;
+        .timeline-hour-label {
+            background: var(--bg-color);
         }
 
-        .timeline-dot {
-            position: absolute;
-            left: 55px;
-            top: 12px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 2px solid var(--card-bg);
+        .timeline-hour-content {
+            border-left: 1px dashed var(--border-color);
         }
 
-        .timeline-content {
-            flex: 1;
-        }
-
-        .timeline-time {
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .timeline-title {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 1rem;
-        }
-
-        .timeline-location {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .timeline-item .delete {
-            float: right;
+        .timeline-schedule-block {
+            z-index: 1;
         }
 
         .mood-selector {
