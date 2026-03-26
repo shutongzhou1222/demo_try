@@ -320,14 +320,14 @@
 
             const hourHeight = 50;
             
-            let html = `<div class="full-timeline" style="position: relative; height: ${24 * hourHeight}px; border-left: 2px solid var(--border-color); margin-left: 35px;">`;
+            let html = `<div class="full-timeline" style="position: relative; height: ${24 * hourHeight}px; border-left: 2px solid var(--border-color); padding-left: 0;">`;
             
             for (let h = 0; h < 24; h++) {
                 const hourStr = h.toString().padStart(2, '0') + ':00';
                 html += `
-                    <div class="timeline-hour-row" style="position: absolute; top: ${h * hourHeight}px; left: 0; right: 0; height: ${hourHeight}px; border-bottom: 1px solid var(--border-color); display: flex;">
-                        <div class="timeline-hour-label" style="width: 35px; text-align: right; padding-right: 5px; font-size: 0.7rem; color: var(--text-secondary); flex-shrink: 0;">${hourStr}</div>
-                        <div class="timeline-hour-content" style="flex: 1; position: relative;"></div>
+                    <div class="timeline-hour-row" style="position: absolute; top: ${h * hourHeight}px; left: 0; right: 0; height: ${hourHeight}px; border-bottom: 1px solid var(--border-color); display: flex; align-items: flex-start;">
+                        <div class="timeline-hour-label" style="width: 30px; text-align: right; font-size: 0.65rem; color: var(--text-secondary); flex-shrink: 0; line-height: 1;">${hourStr}</div>
+                        <div class="timeline-hour-content" style="flex: 1; position: relative; margin-left: -1px;"></div>
                     </div>
                 `;
             }
@@ -348,7 +348,7 @@
                     const timeDisplay = schedule.endTime ? `${schedule.startTime} - ${schedule.endTime}` : schedule.startTime;
                     
                     html += `
-                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 40px; right: 5px; height: ${height}px; background: ${cat.color}20; border-left: 4px solid ${cat.color}; border-radius: 4px; padding: 4px 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
+                        <div class="timeline-schedule-block" style="position: absolute; top: ${startTop}px; left: 32px; right: 5px; height: ${height}px; background: ${cat.color}20; border-left: 4px solid ${cat.color}; border-radius: 4px; padding: 4px 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
                             <div style="font-size: 0.7rem; font-weight: 600; color: ${cat.color}; line-height: 1.2;">${timeDisplay}</div>
                             <div style="font-weight: 600; color: var(--text-primary); font-size: 0.8rem; line-height: 1.3; word-break: break-all;">${escapeHtml(schedule.title)}</div>
                             ${schedule.location && height > 45 ? `<div style="font-size: 0.65rem; color: var(--text-secondary); line-height: 1.2; margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(schedule.location)}</div>` : ''}
